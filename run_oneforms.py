@@ -109,7 +109,7 @@ for p in ps:
         result.append((n, p, f, dofs, cells, adds, subs, muls, divs, mems, bytes, time,
                        instructions, loops, dof_loop_extent, quadrature_loop_extent))
 
-csvfile = open('results/vector/csv/{0}{1}_{2}_{3}_{4}_{5}{6}.csv'.format(prefix, form, mesh, str(np), simd_width, vect_strategy, suffix), 'w')
+csvfile = open('csv/{0}{1}_{2}_{3}_{4}_{5}{6}.csv'.format(prefix, form, mesh, str(np), simd_width, vect_strategy, suffix), 'w')
 writer = csv.writer(csvfile)
 writer.writerows(result)
 csvfile.close()

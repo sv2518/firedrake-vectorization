@@ -77,12 +77,17 @@ if rank == 0:
     print("CELLS= {0}".format(cells))
     print("DOFS= {0}".format(dofs))
 
+    from loopy.program import make_program
+
     knl = compile_form(y_form, coffee=False)[0].ast
     warnings = list(knl.silenced_warnings)
     warnings.extend(["insn_count_subgroups_upper_bound", "no_lid_found"])
     knl = knl.copy(silenced_warnings=warnings)
-    op_map = lp.get_op_map(knl)
-    mem_map = lp.get_mem_access_map(knl, subgroup_size=1)
+    knl.options.ignore_boostable_into = True
+
+    program = make_program(knl)
+    op_map = lp.get_op_map(program, subgroup_size=1)
+    mem_map = lp.get_mem_access_map(program, subgroup_size=1)
 
     for op in ['add', 'sub', 'mul', 'div']:
         print("{0}S= {1}".format(op.upper(), op_map.filter_by(name=[op], dtype=[np.float64]).eval_and_sum({})))

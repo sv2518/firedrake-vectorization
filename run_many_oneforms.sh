@@ -1,8 +1,12 @@
 #!/bin/bash
-batchsize=(1 8)
+batchsize=(1 4)  # 1: not vectorize, 4: vectorize by 4
 mesh=('quad' 'tri' 'hex' 'tetra')
+# mesh=('quad')
 form=('helmholtz' 'mass' 'laplacian' 'elasticity' 'hyperelasticity')
-vs=('omp' 've')
+# form=('helmholtz')
+vs=('omp' 've')  # vectorization strategy
+export PYOP2_TIME=1  # switch on timing mode
+export TJ_NP=1  # number of processes
 for v in ${vs[@]}
 do
     for m in ${mesh[@]}
