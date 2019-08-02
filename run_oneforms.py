@@ -75,7 +75,8 @@ repeat = 5
 
 simd_width = os.environ['PYOP2_SIMD_WIDTH']
 vect_strategy = os.environ['PYOP2_VECT_STRATEGY']
-print("form={0}, mesh={1}, simd={2}, np={3}, {4}".format(form, mesh, simd_width, np, vect_strategy))
+compiler = os.environ['OMPI_CC']
+print("form={0}, mesh={1}, simd={2}, np={3}, {4}, {5}".format(form, mesh, simd_width, np, vect_strategy, compiler))
 
 result = [("n", "p", "f", "dof", "cell", "add", "sub", "mul", "div", "mem", "byte", "time", "ninst", "nloops", "extend_dof", "extend_quad")]
 for p in ps:
