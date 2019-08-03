@@ -2,12 +2,14 @@
 arch='haswell'
 # arch="skylake"
 compiler=('gcc' 'clang' 'icc')
+# compiler=('gcc')
 batchsize=(1 4)  # 1: not vectorize, 4: vectorize by 4
 mesh=('quad' 'tri' 'hex' 'tetra')
 # mesh=('quad')
 form=('helmholtz' 'mass' 'laplacian' 'elasticity' 'hyperelasticity')
 # form=('helmholtz')
 vs=('omp' 've')  # vectorization strategy
+# vs=('ve')
 export PYOP2_TIME=1  # switch on timing mode
 export TJ_NP=16  # number of processes
 
