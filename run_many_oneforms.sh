@@ -3,7 +3,14 @@ arch='haswell'
 # arch="skylake"
 compiler=('gcc' 'clang' 'icc')
 # compiler=('gcc')
-batchsize=(1 4)  # 1: not vectorize, 4: vectorize by 4
+if [ $arch == "haswell" ]
+then
+    batchsize=(1 4)  # 1: not vectorize, 4: vectorize by 4
+    export TJ_NP=16  # number of processes
+else
+    batchsize=(1 8)
+    export TJ_NP=32
+fi
 mesh=('quad' 'tri' 'hex' 'tet')
 # mesh=('quad')
 form=('helmholtz' 'mass' 'laplacian' 'elasticity' 'hyperelasticity')
@@ -11,7 +18,6 @@ form=('helmholtz' 'mass' 'laplacian' 'elasticity' 'hyperelasticity')
 vs=('omp' 've')  # vectorization strategy
 # vs=('ve')
 export PYOP2_TIME=1  # switch on timing mode
-export TJ_NP=16  # number of processes
 
 for v in ${vs[@]}
 do
