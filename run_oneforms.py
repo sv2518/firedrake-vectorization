@@ -18,7 +18,7 @@ def get_n(mesh, p):
             return 32
         else:
             return 64
-    elif mesh == "tetra":
+    elif mesh == "tet":
         if p > 4:
             return 32
         else:
@@ -65,7 +65,7 @@ elif mesh == "quad":
     ps = range(1, 7)
 elif mesh == "tri":
     ps = range(1, 7)
-elif mesh == "tetra":
+elif mesh == "tet":
     ps = range(1, 7)
 else:
     raise AssertionError()

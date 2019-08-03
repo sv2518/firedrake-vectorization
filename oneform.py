@@ -14,7 +14,7 @@ parser.add_argument('--p', dest='p', default=1, type=int)
 parser.add_argument('--n', dest='n', default=32, type=int)
 parser.add_argument('--f', dest='f', default=0, type=int)
 parser.add_argument('--repeat', dest='repeat', default=1, type=int)
-parser.add_argument('--mesh', dest='m', default="tri", type=str, choices=["quad", "tetra", "hex", "tri"])
+parser.add_argument('--mesh', dest='m', default="tri", type=str, choices=["quad", "tet", "hex", "tri"])
 parser.add_argument('--print', default=False, action="store_true")
 args, _ = parser.parse_known_args()
 
@@ -29,7 +29,7 @@ if m == "quad":
     mesh = IntervalMesh(n, n)
     mesh = ExtrudedMesh(mesh, n, layer_height=1.0)
     # mesh = SquareMesh(n, n, L=n, quadrilateral=True)
-elif m == "tetra":
+elif m == "tet":
     mesh = CubeMesh(n, n, n, L=n)
 elif m == "hex":
     mesh = SquareMesh(n, n, L=n, quadrilateral=True)
