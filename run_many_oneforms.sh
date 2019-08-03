@@ -28,6 +28,7 @@ do
                     export PYOP2_SIMD_WIDTH=$bs
                     export PYOP2_VECT_STRATEGY=$v
                     export OMPI_CC=$comp
+                    export MPICH_CC=$comp
                     export PYOP2_CFLAGS="-march=native"
                     if [ $comp == "icc" ]
                     then
