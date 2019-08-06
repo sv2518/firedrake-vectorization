@@ -76,6 +76,7 @@ repeat = 5
 simd_width = os.environ['PYOP2_SIMD_WIDTH']
 vect_strategy = os.environ['PYOP2_VECT_STRATEGY']
 compiler = os.environ['OMPI_CC']
+mpi_map_by = os.environ['TJ_MPI_MAP_BY']
 print("form={0}, mesh={1}, simd={2}, np={3}, {4}, {5}".format(form, mesh, simd_width, np, vect_strategy, compiler))
 
 result = [("n", "p", "f", "dof", "cell", "add", "sub", "mul", "div", "mem", "byte", "time", "ninst", "nloops", "extend_dof", "extend_quad")]
@@ -83,7 +84,7 @@ for p in ps:
     for f in fs:
         n = get_n(mesh, p)
         print("n={0}, p={1}, f={2}".format(n, p, f))
-        cmd = ["mpirun", "-np", np, "--bind-to", "hwthread", "--map-by", "core",
+        cmd = ["mpirun", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
                "python", "oneform.py", "--n", str(n), "--p", str(p), "--f", str(f),
                "--form", form, "--mesh", mesh, "--repeat", str(repeat)]
         cmd.append("-log_view")
