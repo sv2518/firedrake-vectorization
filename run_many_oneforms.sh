@@ -17,10 +17,10 @@ then
     fi
 else
     batchsize=(1 8)
-    if [ $hyperthreading == 1]
+    if [ $hyperthreading == 1 ]
     then
         export TJ_NP=32
-        export TJ_MPI_MAP_BY="hwthreads"
+        export TJ_MPI_MAP_BY="hwthread"
     else
         export TJ_NP=16
         export TJ_MPI_MAP_BY="core"
