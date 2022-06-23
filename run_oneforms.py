@@ -84,14 +84,14 @@ for p in ps:
     for f in fs:
         n = get_n(mesh, p)
         print("n={0}, p={1}, f={2}".format(n, p, f))
-        cmd = ["mpirun", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
+        cmd = ["mpiexec", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
                "python", "oneform.py", "--n", str(n), "--p", str(p), "--f", str(f),
                "--form", form, "--mesh", mesh, "--repeat", str(repeat)]
         cmd.append("-log_view")
 
         output = subprocess.run(cmd, stdout=subprocess.PIPE).stdout.decode("utf-8").split()
 
-        time = float(output[output.index("ParLoop_Cells_wrap_form0_cell_integral_otherwise") + 3]) / repeat
+        time = float(output[output.index("Parloop_Cells_wrap_form0_cell_integral_otherwise") + 3]) / repeat
         dofs = int(output[output.index("DOFS=") + 1])
         cells = int(output[output.index("CELLS=") + 1])
         adds = int(output[output.index("ADDS=") + 1])
