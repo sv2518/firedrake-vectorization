@@ -38,7 +38,7 @@ def get_n(mesh, p):
         elif p > 2:
             return 1024
         else:
-            return 2048
+            return 12
     else:
         raise AssertionError()
 
@@ -66,7 +66,7 @@ elif mesh == "quad":
 elif mesh == "tri":
     ps = range(1, 7)
 elif mesh == "tet":
-    ps = range(1, 7)
+    ps = range(1, 2)
 else:
     raise AssertionError()
 
@@ -84,7 +84,8 @@ for p in ps:
     for f in fs:
         n = get_n(mesh, p)
         print("n={0}, p={1}, f={2}".format(n, p, f))
-        cmd = ["mpiexec", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
+        cmd = [
+            #    "mpiexec", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
                "python", "oneform.py", "--n", str(n), "--p", str(p), "--f", str(f),
                "--form", form, "--mesh", mesh, "--repeat", str(repeat)]
         cmd.append("-log_view")

@@ -1,0 +1,2 @@
+n,p,f,dof,cell,add,sub,mul,div,mem,byte,time,ninst,nloops,extend_dof,extend_quad
+12,1,0,169,288,38,0,52,1,27,8864,0.43133999999999995,24,4,3,3

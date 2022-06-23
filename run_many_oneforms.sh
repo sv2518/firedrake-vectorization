@@ -1,9 +1,7 @@
 #!/bin/bash
-arch='haswell'
-# arch="skylake"
+arch="mymac"
 hyperthreading=0
-compiler=('gcc' 'clang' 'icc')
-# compiler=('icc')
+compiler=('clang')
 if [ $arch == "haswell" ]
 then
     batchsize=(1 4)  # 1: not vectorize, 4: vectorize by 4
@@ -15,7 +13,8 @@ then
         export TJ_NP=8
         export TJ_MPI_MAP_BY="core"
     fi
-else
+elif [ $arch == "skylake" ]
+then
     batchsize=(1 8)
     if [ $hyperthreading == 1 ]
     then
@@ -25,14 +24,24 @@ else
         export TJ_NP=16
         export TJ_MPI_MAP_BY="core"
     fi
+else
+    batchsize=(1 4)
+    if [ $hyperthreading == 1 ]
+    then
+        export TJ_NP=32
+        export TJ_MPI_MAP_BY="hwthread"
+    else
+        export TJ_NP=4
+        export TJ_MPI_MAP_BY="core"
+    fi
 fi
-mesh=('quad' 'tri' 'hex' 'tet')
+mesh=('tri')
 # mesh=('tet')
-form=('helmholtz' 'mass' 'laplacian' 'elasticity' 'hyperelasticity')
+form=('helmholtz')
 # form=('helmholtz')
-vs=('omp' 've')  # vectorization strategy
+vs=('cross-element')  # vectorization strategy
 # vs=('omp')
-export PYOP2_TIME=1  # switch on timing mode
+export PYOP2_EXTRA_INFO=1  # switch on timing mode
 
 for v in ${vs[@]}
 do
