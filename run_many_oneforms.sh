@@ -25,7 +25,7 @@ then
         export TJ_NP=16
         export TJ_MPI_MAP_BY="core"
     fi
-else:
+else
     batchsize=(1 8)
     if [ $hyperthreading == 1 ]
     then
