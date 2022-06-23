@@ -91,7 +91,7 @@ for p in ps:
 
         output = subprocess.run(cmd, stdout=subprocess.PIPE).stdout.decode("utf-8").split()
 
-        time = float(output[output.index("ParLoop_Cells_wrap_form0_cell_integral_otherwise") + 3]) / repeat
+        time = float(output[output.index("Parloop_Cells_wrap_form0_cell_integral_otherwise") + 3]) / repeat
         dofs = int(output[output.index("DOFS=") + 1])
         cells = int(output[output.index("CELLS=") + 1])
         adds = int(output[output.index("ADDS=") + 1])
