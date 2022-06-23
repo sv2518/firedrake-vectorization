@@ -36,13 +36,10 @@ else:
         export TJ_MPI_MAP_BY="core"
     fi
 fi
-mesh=('quad' 'tri' 'hex' 'tet')
-# mesh=('tet')
-form=('helmholtz' 'mass' 'laplacian' 'elasticity' 'hyperelasticity')
-# form=('helmholtz')
-vs=('omp' 've')  # vectorization strategy
-# vs=('omp')
-export PYOP2_TIME=1  # switch on timing mode
+mesh=('quad') # 'tri' 'hex' 'tet')
+form=('helmholtz') # 'mass' 'laplacian' 'elasticity' 'hyperelasticity')
+vs=('cross-element')  # vectorization strategy
+export PYOP2_EXTRA_INFO=1  # switch on timing mode
 
 for v in ${vs[@]}
 do
