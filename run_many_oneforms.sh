@@ -1,6 +1,5 @@
 #!/bin/bash
-arch='haswell'
-# arch="skylake"
+arch='haswell-on-pex'
 hyperthreading=0
 compiler=('gcc' 'clang' 'icc')
 # compiler=('icc')
@@ -15,7 +14,18 @@ then
         export TJ_NP=8
         export TJ_MPI_MAP_BY="core"
     fi
-else
+else [ $arch == "haswell-on-pex" ]
+then
+    batchsize=(1 4)  # 1: not vectorize, 4: vectorize by 4
+    if [ $hyperthreading == 1 ]
+    then
+        export TJ_NP=16  # number of processes
+        export TJ_MPI_MAP_BY="hwthread"
+    else
+        export TJ_NP=8
+        export TJ_MPI_MAP_BY="core"
+    fi
+else:
     batchsize=(1 8)
     if [ $hyperthreading == 1 ]
     then
@@ -53,7 +63,7 @@ do
                     export PYOP2_CFLAGS="-march=native"
                     if [ $comp == "icc" ]
                     then
-                        if [ $arch == "haswell" ]
+                        if [ $arch == "haswell" or $arch == "haswell-on-pex" ]
                         then
                             export PYOP2_CFLAGS="-xcore-avx2"
                         else
