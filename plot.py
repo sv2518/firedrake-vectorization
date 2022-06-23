@@ -18,10 +18,9 @@ cpu["skylake"] = {
     "peak_flop_linpack": 678.8e9, # 1 core = 62.8
     "peak_bw": 36.6e9,
 }
-cpu["mymac"] = {
-    "peak_flop": 1.4e9 * 4 * 4 * 2 * 2,  # clock x cores x simd x fma x port
-    "peak_flop_linpack": 678.8e9,  # this is not correct for my mac, how do I get it
-    "peak_bw": 12.8e9,
+cpu["haswell-on-pex"] = {
+    "peak_flop": 2.6e9 * (2*8) * 4 * 2 * 2,  # clock x cores x simd x fma x port
+    "peak_bw": 2*59e9,
 }
 
 
@@ -47,7 +46,7 @@ forms = ["helmholtz", "elasticity"]
 meshes = ["tri", "quad", "tet", "hex"]
 platform = "haswell"
 hyperthreading = False
-vec = "ve"
+vec = "cross-element"
 
 if platform == "haswell":
     simd = "4"
@@ -58,11 +57,17 @@ if platform == "haswell":
 elif platform == "mymac":
     simd = "4"
     threads = "16"
+elif platform == "haswell-on-pex":
+    simd = "4"
+    if hyperthreading:
+        threads = "16"
+    else:
+        threads = "8"
 else:
     simd = "8"
     threads = "32" if hyperthreading else "16"
     
-compilers = ["icc", "gcc", "clang"]
+compilers = ["gcc"]
 x = "p"
 y = "flop / peak"
 # linpack_scale = cpu[platform]['peak_flop'] / cpu[platform]['peak_flop_linpack']
@@ -123,7 +128,7 @@ for form_id, form in enumerate(forms):
         else:
             plt.setp(ax1.get_xticklabels(), visible=False)
 
-plt.figlegend(plots, ["ICC", "GCC", "CLANG", "baseline"], ncol=5,
+plt.figlegend(plots, ["GCC", "baseline"], ncol=5,
               loc = "center", bbox_to_anchor=[0.5, 0.04], frameon=True)
 
 plt.tight_layout()
@@ -135,12 +140,12 @@ plt.savefig("plots/"+platform + "-" + vec + ".pdf", format="pdf")
 plt.close('all')
 plt.figure(figsize=(16, 5))
 
-platform = "haswell"  # haswell or skylake
+platform = "haswell-on-pex"  # haswell or skylake
 forms = ["mass", "helmholtz", "laplacian", "elasticity", "hyperelasticity"]
 forms = ["mass", "helmholtz", "laplacian", "elasticity", "hyperelasticity"]
 meshes = ["tri", "quad", "tet", "hex"]
 compiler = "gcc"
-vec = "ve"
+vec = "cross-element"
 
 setting = {
     "haswell": {
@@ -166,7 +171,15 @@ setting = {
         "ytop": 2000,
         "ybottom": 1,
         "xleft": 0.15,
-    }
+    },
+    "haswell-on-pex": {
+        "simds": ["1", "4"],
+        "proc": "16",
+        "yticks": [5, 10, 20, 50, 100, 200, 300, 500],
+        "ytop": 500,
+        "ybottom": 3,
+        "xleft": 0.1,
+    },
 }
 
 x = "ai"
@@ -208,7 +221,7 @@ for idx, simd in enumerate(setting[platform]["simds"]):
 
     ax.set_ylim(bottom=setting[platform]["ybottom"], top=setting[platform]["ytop"])
     ax.set_xlim(left=setting[platform]["xleft"], right=3000)
-    ax.set_title(platform.capitalize() + (" baseline" if simd == "1" else " ve vectorization"))
+    ax.set_title(platform.capitalize() + (" baseline" if simd == "1" else " cross-element vectorization"))
     ax.set_ylabel("GFLOPS / s")
     ax.set_xlabel("Arithmetic intensity")
 
@@ -223,7 +236,7 @@ plt.savefig("plots/"+"roofline-" + platform + ".pdf", format="pdf", bbox_extra_a
 forms = ["mass", "helmholtz", "laplacian", "elasticity", "hyperelasticity"]
 meshes = ["tri", "quad", "tet", "hex"]
 compiler = "gcc"
-vec = "ve"
+vec = "cross-element"
 
 setting = {
     "haswell": {
@@ -237,7 +250,11 @@ setting = {
     "mymac": {
         "simd": "4",
         "proc": "4",
-    }
+    },
+    "haswell-on-pex": {
+        "simd":"4",
+        "proc": "16",
+    },
 }
 
 from collections import defaultdict
@@ -246,7 +263,7 @@ result = defaultdict(dict)
 
 for form in forms:
     for mesh in meshes:
-        for platform in ["haswell", "skylake"]:
+        for platform in ["haswell-on-pex"]:
             # baseline
             filename = "_".join([platform, form, mesh, setting[platform]["proc"], "1", vec, compiler]) + ".csv"
             df = pd.read_csv("./csv/" + filename)
