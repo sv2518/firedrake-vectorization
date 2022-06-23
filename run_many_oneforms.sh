@@ -1,6 +1,6 @@
 #!/bin/bash
 arch='haswell-on-pex'
-hyperthreading=0
+hyperthreading=1
 compiler=('gcc' 'clang' 'icc')
 # compiler=('icc')
 if [ $arch == "haswell" ]
@@ -19,10 +19,10 @@ then
     batchsize=(1 4)  # 1: not vectorize, 4: vectorize by 4
     if [ $hyperthreading == 1 ]
     then
-        export TJ_NP=16  # number of processes
+        export TJ_NP=32  # number of processes
         export TJ_MPI_MAP_BY="hwthread"
     else
-        export TJ_NP=8
+        export TJ_NP=16
         export TJ_MPI_MAP_BY="core"
     fi
 else:
