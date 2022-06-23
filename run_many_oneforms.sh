@@ -1,7 +1,7 @@
 #!/bin/bash
 arch='haswell-on-pex'
 hyperthreading=1
-compiler=('gcc' 'clang' 'icc')
+compiler=('gcc')
 # compiler=('icc')
 if [ $arch == "haswell" ]
 then
