@@ -84,7 +84,7 @@ for p in ps:
     for f in fs:
         n = get_n(mesh, p)
         print("n={0}, p={1}, f={2}".format(n, p, f))
-        cmd = ["mpirun", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
+        cmd = ["mpiexec", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
                "python", "oneform.py", "--n", str(n), "--p", str(p), "--f", str(f),
                "--form", form, "--mesh", mesh, "--repeat", str(repeat)]
         cmd.append("-log_view")
