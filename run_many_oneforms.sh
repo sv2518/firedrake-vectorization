@@ -14,7 +14,7 @@ then
         export TJ_NP=8
         export TJ_MPI_MAP_BY="core"
     fi
-else [ $arch == "haswell-on-pex" ]
+elif [ $arch == "haswell-on-pex" ]
 then
     batchsize=(1 4)  # 1: not vectorize, 4: vectorize by 4
     if [ $hyperthreading == 1 ]
