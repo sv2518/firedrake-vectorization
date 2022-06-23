@@ -38,7 +38,7 @@ else
 fi
 mesh=('quad') # 'tri' 'hex' 'tet')
 form=('helmholtz') # 'mass' 'laplacian' 'elasticity' 'hyperelasticity')
-vs=('cross-element')  # vectorization strategy
+vs=("" "cross-element")  # vectorization strategy
 export PYOP2_EXTRA_INFO=1  # switch on timing mode
 
 for v in ${vs[@]}
