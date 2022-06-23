@@ -6,7 +6,7 @@ import numpy as np
 import argparse
 from functools import reduce
 import operator
-
+from islpy import dim_type
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--form', dest='form', default="helmholtz", type=str)
@@ -77,31 +77,30 @@ if rank == 0:
     print("CELLS= {0}".format(cells))
     print("DOFS= {0}".format(dofs))
 
-    from loopy.program import make_program
-
-    knl = compile_form(y_form, coffee=False)[0].ast
+    tunit = compile_form(y_form, coffee=False)[0].ast
+    name, = [name for name in tunit.callables_table]
+    prog = tunit.with_entrypoints(name)
+    knl = prog.default_entrypoint
     warnings = list(knl.silenced_warnings)
     warnings.extend(["insn_count_subgroups_upper_bound", "no_lid_found"])
-    knl = knl.copy(silenced_warnings=warnings)
-    knl.options.ignore_boostable_into = True
-
-    program = make_program(knl)
-    op_map = lp.get_op_map(program, subgroup_size=1)
-    mem_map = lp.get_mem_access_map(program, subgroup_size=1)
+    knl = knl.default_entrypoint.copy(silenced_warnings=warnings)
+    prog = prog.with_kernel(knl)
+    op_map = lp.get_op_map(knl, subgroup_size=1)
+    mem_map = lp.get_mem_access_map(knl, subgroup_size=1)  # Is subgroup_size=1 correct?
 
     for op in ['add', 'sub', 'mul', 'div']:
         print("{0}S= {1}".format(op.upper(), op_map.filter_by(name=[op], dtype=[np.float64]).eval_and_sum({})))
     print("MEMS= {0}".format(mem_map.filter_by(mtype=['global'], dtype=[np.float64]).eval_and_sum({})))
-    print("INSTRUCTIONS= {0:d}".format(len(knl.instructions)))
-    print("LOOPS= {0:d}".format(len(knl.all_inames())))
-    for domain in knl.domains:
-        if domain.get_dim_name(3, 0)[0] == "j":
+    print("INSTRUCTIONS= {0:d}".format(len(knl.default_entrypoint.instructions)))
+    print("LOOPS= {0:d}".format(len(knl.default_entrypoint.all_inames())))
+    for domain in knl.default_entrypoint.domains:
+        if domain.get_dim_name(dim_type.set, 0)[0] == "j":
             print("DOF_LOOP_EXTENT= {0:d}".format(int(domain.dim_max_val(0).to_str()) + 1))
             break
     else:
         print("DOF_LOOP_EXTENT= 1")
-    for domain in knl.domains:
-        if domain.get_dim_name(3, 0)[0:2] == "ip":
+    for domain in knl.default_entrypoint.domains:
+        if domain.get_dim_name(dim_type.set, 0)[0:2] == "ip":
             print("QUADRATURE_LOOP_EXTENT= {0:d}".format(int(domain.dim_max_val(0).to_str()) + 1))
             break
     else:
