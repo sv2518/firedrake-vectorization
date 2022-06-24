@@ -2,7 +2,6 @@
 arch='haswell-on-pex'
 hyperthreading=1
 compiler=('gcc')
-# compiler=('icc')
 if [ $arch == "haswell" ]
 then
     batchsize=(1 4)  # 1: not vectorize, 4: vectorize by 4
