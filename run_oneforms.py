@@ -90,8 +90,8 @@ for p in ps:
         cmd.append("-log_view")
 
         output = subprocess.run(cmd, stdout=subprocess.PIPE).stdout.decode("utf-8").split()
-
-        time = float(output[output.index("Parloop_Cells_wrap_form0_cell_integral_otherwise") + 3]) / repeat
+        
+        time = float(output[output.index("Parloop_Cells_wrap_slate_wrapper") + 3]) / repeat
         dofs = int(output[output.index("DOFS=") + 1])
         cells = int(output[output.index("CELLS=") + 1])
         adds = int(output[output.index("ADDS=") + 1])
@@ -99,7 +99,7 @@ for p in ps:
         muls = int(output[output.index("MULS=") + 1])
         divs = int(output[output.index("DIVS=") + 1])
         mems = int(output[output.index("MEMS=") + 1])
-        bytes = int(output[output.index("wrap_form0_cell_integral_otherwise_BYTES=") + 1])
+        bytes = int(output[output.index("wrap_slate_wrapper_BYTES=") + 1])
         instructions = int(output[output.index("INSTRUCTIONS=") + 1])
         loops = int(output[output.index("LOOPS=") + 1])
         dof_loop_extent = int(output[output.index("DOF_LOOP_EXTENT=") + 1])
