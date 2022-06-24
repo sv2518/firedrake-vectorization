@@ -77,7 +77,7 @@ _color = ("red", "blue", "goldenrod", "black")
 for form_id, form in enumerate(forms):
     for mesh_id, mesh in enumerate(meshes):
         dfs = []
-        filename = "_".join([platform, form, mesh, threads, "1", "", "gcc"]) + ".csv"
+        filename = "_".join([platform, form, mesh, threads, "1", vec, "gcc"]) + ".csv"
         base_df = pd.read_csv("./csv/" + filename)
         base_df = compute(base_df, platform)
         for compiler in compilers:
