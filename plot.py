@@ -76,11 +76,11 @@ _color = ("red", "blue", "goldenrod", "black")
 for form_id, form in enumerate(forms):
     for mesh_id, mesh in enumerate(meshes):
         dfs = []
-        filename = "_".join([platform, form, mesh, threads, "1", vec, "gcc"]) + ".csv"
+        filename = "_".join([platform, form+"_slatexpr", mesh, threads, "1", vec, "gcc"]) + ".csv"
         base_df = pd.read_csv("./csv/" + filename)
         base_df = compute(base_df, platform)
         for compiler in compilers:
-            filename = "_".join([platform, form, mesh, threads, simd, vec, compiler]) + ".csv"
+            filename = "_".join([platform, form+"_slatexpr", mesh, threads, simd, vec, compiler]) + ".csv"
             df = pd.read_csv("./csv/" + filename)
             df = compute(df, platform)
             df["speed up"] = base_df["time"] / df["time"]
@@ -132,7 +132,7 @@ plt.figlegend(plots, ["GCC", "baseline"], ncol=5,
 
 plt.tight_layout()
 plt.subplots_adjust(bottom=0.15)
-plt.savefig("plots/"+platform + "-" + vec + ".pdf", format="pdf")
+plt.savefig("plots/slate/"+platform + "-" + vec + ".pdf", format="pdf")
 
 
 # roofline
@@ -208,7 +208,7 @@ for idx, simd in enumerate(setting[platform]["simds"]):
         marker = next(markers)
         for mesh_id, mesh in enumerate(meshes):
             color = next(colors)
-            filename = "_".join([platform, form, mesh, setting[platform]["proc"], simd, vec, compiler]) + ".csv"
+            filename = "_".join([platform, form+"_slatexpr", mesh, setting[platform]["proc"], simd, vec, compiler]) + ".csv"
             df = pd.read_csv("./csv/" + filename)
             df = compute(df, platform)
             plot, = ax.plot(df[x], df[y]/1e9, label=form+" - "+mesh, markersize=7, marker=marker, color=color,
@@ -227,7 +227,7 @@ plt.subplots_adjust(bottom=0.3)
 lgd = plt.figlegend(plots, names, ncol=5, 
                     loc = "center", bbox_to_anchor=[0.35, 0.1], frameon=False)
 # plt.figlegend(linpack, ["LINPACK"], loc = "center", bbox_to_anchor=[0.7, 0.1], frameon=False)
-plt.savefig("plots/"+"roofline-" + platform + ".pdf", format="pdf", bbox_extra_artists=(lgd,), bbox_inches='tight')
+plt.savefig("plots/slate/"+"roofline-" + platform + ".pdf", format="pdf", bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 
 # populate table in paper
@@ -263,11 +263,11 @@ for form in forms:
     for mesh in meshes:
         for platform in ["haswell-on-pex"]:
             # baseline
-            filename = "_".join([platform, form, mesh, setting[platform]["proc"], "1", vec, compiler]) + ".csv"
+            filename = "_".join([platform, form+"_slatexpr", mesh, setting[platform]["proc"], "1", vec, compiler]) + ".csv"
             df = pd.read_csv("./csv/" + filename)
             df = compute(df, platform)
             
-            filename = "_".join([platform, form, mesh, setting[platform]["proc"], setting[platform]["simd"], vec, compiler]) + ".csv"
+            filename = "_".join([platform, form+"_slatexpr", mesh, setting[platform]["proc"], setting[platform]["simd"], vec, compiler]) + ".csv"
             df_speed = pd.read_csv("./csv/" + filename)
             df_speed = compute(df_speed, platform)
             df["speed up " + platform] = df["time"] / df_speed["time"]
