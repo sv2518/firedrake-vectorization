@@ -57,7 +57,7 @@ do
                     export PYOP2_VECT_STRATEGY=$v
                     export OMPI_CC=$comp
                     export MPICH_CC=$comp
-                    export PYOP2_CFLAGS="-march=native"
+                    #export PYOP2_CFLAGS="-march=native"
                     if [ $comp == "icc" ]
                     then
                         if [ $arch == "haswell" or $arch == "haswell-on-pex" ]
