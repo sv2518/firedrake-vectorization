@@ -55,10 +55,10 @@ else:
 
 form = eval(form_str)(p, p, mesh, f)
 y_form = action(form, x)
-
+slate_expr = Tensor(action(form, x)) + Tensor(action(form, x)) - Tensor(action(form, x))
 y = Function(V)
 for i in range(repeat):
-   assemble(y_form, tensor=y)
+   assemble(slate_expr, tensor=y)
    y.dat.data
 
 if args.print:
