@@ -66,8 +66,9 @@ do
                             export PYOP2_CFLAGS="-xcore-avx512 -qopt-zmm-usage=high"
                         fi
                     fi
-                    python run_oneforms.py --prefix "$arch"_ --suffix "_$comp"
                     firedrake-clean
+                    python run_oneforms.py --prefix "$arch"_ --suffix "_$comp"
+                    python run_oneforms.py --prefix "$arch"_ --suffix "_$comp"
                 done
             done
         done
