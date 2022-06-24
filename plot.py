@@ -41,11 +41,10 @@ def compute(df, platform):
 plt.close('all')
 plt.figure(figsize=(12, 6))
 
-# forms = ["mass", "helmholtz", "laplacian", "elasticity", "hyperelasticity"]
-forms = ["helmholtz", "elasticity"]
+forms = ["mass", "helmholtz", "laplacian", "elasticity", "hyperelasticity"]
 meshes = ["tri", "quad", "tet", "hex"]
-platform = "haswell"
-hyperthreading = False
+platform = "haswell-on-pex"
+hyperthreading = True
 vec = "cross-element"
 
 if platform == "haswell":
@@ -141,7 +140,6 @@ plt.close('all')
 plt.figure(figsize=(16, 5))
 
 platform = "haswell-on-pex"  # haswell or skylake
-forms = ["mass", "helmholtz", "laplacian", "elasticity", "hyperelasticity"]
 forms = ["mass", "helmholtz", "laplacian", "elasticity", "hyperelasticity"]
 meshes = ["tri", "quad", "tet", "hex"]
 compiler = "gcc"
