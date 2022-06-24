@@ -41,8 +41,8 @@ def compute(df, platform):
 plt.close('all')
 plt.figure(figsize=(12, 6))
 
-forms = ["mass", "helmholtz", "laplacian", "elasticity", "hyperelasticity"]
-meshes = ["tri", "quad", "tet", "hex"]
+forms = ['hyperelasticity']
+meshes = ["quad"]
 platform = "haswell-on-pex"
 hyperthreading = True
 vec = "cross-element"
@@ -140,8 +140,8 @@ plt.close('all')
 plt.figure(figsize=(16, 5))
 
 platform = "haswell-on-pex"  # haswell or skylake
-forms = ["mass", "helmholtz", "laplacian", "elasticity", "hyperelasticity"]
-meshes = ["tri", "quad", "tet", "hex"]
+forms = ["hyperelasticity"]
+meshes = ["quad"]
 compiler = "gcc"
 vec = "cross-element"
 
@@ -231,8 +231,8 @@ plt.savefig("plots/"+"roofline-" + platform + ".pdf", format="pdf", bbox_extra_a
 
 
 # populate table in paper
-forms = ["mass", "helmholtz", "laplacian", "elasticity", "hyperelasticity"]
-meshes = ["tri", "quad", "tet", "hex"]
+forms = ["hyperelasticity"]
+meshes = ["quad"]
 compiler = "gcc"
 vec = "cross-element"
 
