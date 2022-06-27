@@ -66,7 +66,7 @@ else:
     simd = "8"
     threads = "32" if hyperthreading else "16"
     
-compilers = ["gcc"]
+compilers = ["gcc", "clang"]
 x = "p"
 y = "flop / peak"
 # linpack_scale = cpu[platform]['peak_flop'] / cpu[platform]['peak_flop_linpack']
@@ -127,7 +127,7 @@ for form_id, form in enumerate(forms):
         else:
             plt.setp(ax1.get_xticklabels(), visible=False)
 
-plt.figlegend(plots, ["GCC", "baseline"], ncol=5,
+plt.figlegend(plots, ["GCC", "clang", "baseline"], ncol=5,
               loc = "center", bbox_to_anchor=[0.5, 0.04], frameon=True)
 
 plt.tight_layout()
