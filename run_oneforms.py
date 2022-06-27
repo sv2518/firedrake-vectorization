@@ -75,7 +75,7 @@ repeat = 5
 
 simd_width = os.environ['PYOP2_SIMD_WIDTH']
 vect_strategy = os.environ['PYOP2_VECT_STRATEGY']
-compiler = os.environ['OMPI_CC']
+compiler = os.environ['MPICH_CC']
 mpi_map_by = os.environ['TJ_MPI_MAP_BY']
 print("form={0}, mesh={1}, simd={2}, np={3}, {4}, {5}".format(form, mesh, simd_width, np, vect_strategy, compiler))
 
