@@ -1,7 +1,7 @@
 #!/bin/bash
 arch='haswell-on-pex'
 hyperthreading=1
-compiler=('gcc')
+compiler=('gcc' 'clang')
 if [ $arch == "haswell" ]
 then
     batchsize=(1 4)  # 1: not vectorize, 4: vectorize by 4
@@ -54,10 +54,10 @@ do
                     export TJ_MESH=$m
                     export PYOP2_SIMD_WIDTH=$bs
                     export PYOP2_VECT_STRATEGY=$v
-                    export OMPI_CC=$comp
-                    export MPICH_CC=$comp
-                    #export PYOP2_CFLAGS="-march=native"
-                    if [ $comp == "icc" ]
+                    #export PYOP2_CC=$comp
+		    export MPICH_CC=$comp
+		    #export OMPI_CC=$comp
+		    if [ $comp == "icc" ]
                     then
                         if [ $arch == "haswell" or $arch == "haswell-on-pex" ]
                         then
