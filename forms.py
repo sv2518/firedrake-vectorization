@@ -3,8 +3,8 @@ from functools import reduce
 
 
 def mass(p, q, mesh, nf=0):
-    V = FunctionSpace(mesh, 'CG', p)
-    P = FunctionSpace(mesh, 'CG', q)
+    V = FunctionSpace(mesh, 'DG', p)
+    P = FunctionSpace(mesh, 'DG', q)
     u = TrialFunction(V)
     v = TestFunction(V)
     it = dot(v, u)
@@ -13,8 +13,8 @@ def mass(p, q, mesh, nf=0):
 
 
 def helmholtz(p, q, mesh, nf=0):
-    V = FunctionSpace(mesh, "CG", p)
-    P = FunctionSpace(mesh, "CG", q)
+    V = FunctionSpace(mesh, "DG", p)
+    P = FunctionSpace(mesh, "DG", q)
     u = TrialFunction(V)
     v = TestFunction(V)
     f = [Function(P).assign(1.0) for _ in range(nf)]
@@ -23,8 +23,8 @@ def helmholtz(p, q, mesh, nf=0):
 
 
 def poissonS(p, q, mesh, nf=0):
-    V = FunctionSpace(mesh, "CG", p)
-    P = FunctionSpace(mesh, "CG", q)
+    V = FunctionSpace(mesh, "DG", p)
+    P = FunctionSpace(mesh, "DG", q)
     u = TrialFunction(V)
     v = TestFunction(V)
     f = [Function(P).assign(1.0) for _ in range(nf)]
@@ -33,8 +33,8 @@ def poissonS(p, q, mesh, nf=0):
 
 
 def elasticity(p, q, mesh, nf=0):
-    V = VectorFunctionSpace(mesh, 'CG', p)
-    P = FunctionSpace(mesh, 'CG', q)
+    V = VectorFunctionSpace(mesh, 'DG', p)
+    P = FunctionSpace(mesh, 'DG', q)
     u = TrialFunction(V)
     v = TestFunction(V)
     eps = lambda v: grad(v) + transpose(grad(v))
@@ -44,8 +44,8 @@ def elasticity(p, q, mesh, nf=0):
 
 
 def hyperelasticity(p, q, mesh, nf=0):
-    V = VectorFunctionSpace(mesh, 'CG', p)
-    P = VectorFunctionSpace(mesh, 'CG', q)
+    V = VectorFunctionSpace(mesh, 'DG', p)
+    P = VectorFunctionSpace(mesh, 'DG', q)
     v = TestFunction(V)
     du = TrialFunction(V)  # Incremental displacement
     u = Function(V)        # Displacement from previous iteration
@@ -70,8 +70,8 @@ def hyperelasticity(p, q, mesh, nf=0):
 
 
 def laplacian(p, q, mesh, nf=0):
-    V = VectorFunctionSpace(mesh, 'CG', p)
-    P = VectorFunctionSpace(mesh, 'CG', q)
+    V = VectorFunctionSpace(mesh, 'DG', p)
+    P = VectorFunctionSpace(mesh, 'DG', q)
     u = TrialFunction(V)
     v = TestFunction(V)
     it = inner(grad(v), grad(u))
@@ -82,7 +82,7 @@ def laplacian(p, q, mesh, nf=0):
 def mixed_poisson(p, q, mesh, nf=0):
     BDM = FunctionSpace(mesh, "BDM", p)
     DG = FunctionSpace(mesh, "DG", p - 1)
-    P = FunctionSpace(mesh, 'CG', q)
+    P = FunctionSpace(mesh, 'DG', q)
     W = BDM * DG
     sigma, u = TrialFunctions(W)
     tau, v = TestFunctions(W)
@@ -134,8 +134,8 @@ def holzapfel(p, q, mesh, nf=0):
 
     # Define mesh and function space
     # mesh = UnitCubeMesh(16, 16, 16)
-    V = VectorFunctionSpace(mesh, "CG", p)
-    P = VectorFunctionSpace(mesh, 'CG', q)
+    V = VectorFunctionSpace(mesh, "DG", p)
+    P = VectorFunctionSpace(mesh, 'DG', q)
 
     u = Function(V)
     v = TestFunction(V)

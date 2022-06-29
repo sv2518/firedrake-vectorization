@@ -39,9 +39,9 @@ else:
     mesh = SquareMesh(n, n, L=n)
 
 if form_str in ["mass", "helmholtz"]:
-    V = FunctionSpace(mesh, "CG", p)
+    V = FunctionSpace(mesh, "DG", p)
 elif form_str in ["laplacian", "elasticity", "hyperelasticity", "holzapfel"]:
-    V = VectorFunctionSpace(mesh, "CG", p)
+    V = VectorFunctionSpace(mesh, "DG", p)
 else:
     raise AssertionError()
 
