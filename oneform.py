@@ -1,6 +1,7 @@
 from firedrake import *
 from forms import *
 from tsfc import compile_form
+from firedrake.slate.slac.compiler import compile_expression
 import loopy as lp
 import numpy as np
 import argparse
@@ -77,8 +78,8 @@ if rank == 0:
     print("CELLS= {0}".format(cells))
     print("DOFS= {0}".format(dofs))
 
-    tunit = compile_form(y_form, coffee=False)[0].ast
-    name, = [name for name in tunit.callables_table]
+    tunit = compile_expression(slate_expr, coffee=False)[0].kinfo.kernel.code
+    name = "slate_wrapper"
     prog = tunit.with_entrypoints(name)
     knl = prog.default_entrypoint
     warnings = list(knl.silenced_warnings)
