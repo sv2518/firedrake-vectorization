@@ -39,7 +39,7 @@ def compute(df, platform):
 
 # forms by meshes
 plt.close('all')
-plt.figure(figsize=(12, 6))
+plt.figure(figsize=(8, 10))
 
 forms = ["mass", "helmholtz", "laplacian", "elasticity", "hyperelasticity"]
 meshes = ["tri", "quad", "tet", "hex"]
@@ -137,7 +137,7 @@ plt.savefig("plots/slate/"+platform + "-" + vec + ".pdf", format="pdf")
 
 # roofline
 plt.close('all')
-plt.figure(figsize=(16, 5))
+plt.figure(figsize=(10, 5))
 
 platform = "haswell-on-pex"  # haswell or skylake
 forms = ["mass", "helmholtz", "laplacian", "elasticity", "hyperelasticity"]
@@ -219,13 +219,13 @@ for idx, simd in enumerate(setting[platform]["simds"]):
 
     ax.set_ylim(bottom=setting[platform]["ybottom"], top=setting[platform]["ytop"])
     ax.set_xlim(left=setting[platform]["xleft"], right=3000)
-    ax.set_title(platform.capitalize() + (" baseline" if simd == "1" else " cross-element vectorization"))
+    ax.set_title(("Baseline" if simd == "1" else "Cross-element vectorization"))
     ax.set_ylabel("GFLOPS / s")
     ax.set_xlabel("Arithmetic intensity")
 
 plt.subplots_adjust(bottom=0.3)
 lgd = plt.figlegend(plots, names, ncol=5, 
-                    loc = "center", bbox_to_anchor=[0.35, 0.1], frameon=False)
+                    loc = "center", bbox_to_anchor=[0.5, 0.1], frameon=False)
 # plt.figlegend(linpack, ["LINPACK"], loc = "center", bbox_to_anchor=[0.7, 0.1], frameon=False)
 plt.savefig("plots/slate/"+"roofline-" + platform + ".pdf", format="pdf", bbox_extra_artists=(lgd,), bbox_inches='tight')
 
