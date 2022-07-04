@@ -285,7 +285,7 @@ for form in forms:
         line = ["", str(p)]
         for mesh in meshes:
             res = result[(form, mesh, p)]
-            line.extend([res['ai'], res['extend_dof'], res['extend_quad'], res['speed up haswell-on-pex']])#, res['speed up skylake']])
+            line.extend([res['ai'], res['speed up haswell-on-pex']])#, res['speed up skylake']])
         string += " & ".join(line)
         string += "\\\\\n"
     string += "\\hline\n"
