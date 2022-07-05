@@ -224,8 +224,8 @@ for idx, simd in enumerate(setting[platform]["simds"]):
     ax.set_xlabel("Arithmetic intensity")
 
 plt.subplots_adjust(bottom=0.3)
-lgd = plt.figlegend(plots, names, ncol=5, 
-                    loc = "center", bbox_to_anchor=[0.5, 0.1], frameon=False)
+# lgd = plt.figlegend(plots, names, ncol=5, 
+#                     loc = "center", bbox_to_anchor=[0.5, 0.1], frameon=False)
 # plt.figlegend(linpack, ["LINPACK"], loc = "center", bbox_to_anchor=[0.7, 0.1], frameon=False)
 plt.savefig("plots/"+"tsfc-roofline-" + platform + ".pdf", format="pdf", bbox_inches='tight')
 
