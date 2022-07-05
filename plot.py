@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
 import itertools
-
+import seaborn as sns
 
 # ### Plot
 # Peak performance
@@ -71,7 +71,7 @@ x = "p"
 y = "flop / peak"
 # linpack_scale = cpu[platform]['peak_flop'] / cpu[platform]['peak_flop_linpack']
 
-_color = ("red", "blue", "goldenrod", "black")
+palette = sns.color_palette(n_colors=4)
 
 for form_id, form in enumerate(forms):
     for mesh_id, mesh in enumerate(meshes):
@@ -89,7 +89,7 @@ for form_id, form in enumerate(forms):
         dfs.append(base_df)
         ax1 = plt.subplot(len(forms), len(meshes), mesh_id + form_id*len(meshes) + 1)
         marker = itertools.cycle(('o', 's', '*', '^'))
-        color = itertools.cycle(_color)
+        color = itertools.cycle((palette[0], palette[3], palette[1]))
         linestyle = itertools.cycle(('-', '--', '-.', ':',))
         names = compilers + ["baseline"]
         plots = []
@@ -194,7 +194,8 @@ for idx, simd in enumerate(setting[platform]["simds"]):
 
     rate = cpu[platform]['peak_bw'] / 1e9
     plot, = ax.plot([0.1, cpu[platform]['peak_flop']/1e9/rate, 3000],
-                    [rate*0.1, cpu[platform]['peak_flop']/1e9, cpu[platform]['peak_flop']/1e9], linewidth=2)
+                    [rate*0.1, cpu[platform]['peak_flop']/1e9, cpu[platform]['peak_flop']/1e9], linewidth=2,
+                    color='grey')
     # plot, = ax.plot([cpu[platform]['peak_flop_linpack']/1e9/rate, 3000],
     #                 [cpu[platform]['peak_flop_linpack']/1e9, cpu[platform]['peak_flop_linpack']/1e9],
     #                linestyle=':', color='grey')
@@ -202,7 +203,7 @@ for idx, simd in enumerate(setting[platform]["simds"]):
         linpack = [plot]
 
     markers = itertools.cycle(('o', 's', '*', '^', 'v'))
-    colors = itertools.cycle(("red", "blue", "goldenrod", "green"))
+    colors = itertools.cycle(palette)
     names = []
     for form_id, form in enumerate(forms):
         marker = next(markers)
