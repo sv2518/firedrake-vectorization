@@ -259,9 +259,12 @@ setting = {
 from collections import defaultdict
 
 result = defaultdict(dict)
+plen = 6
+result_s = np.zeros((len(forms)*plen, len(meshes)))
+result_ai = np.zeros((len(forms)*plen, len(meshes)))
 
-for form in forms:
-    for mesh in meshes:
+for i, form in enumerate(forms):
+    for j, mesh in enumerate(meshes):
         for platform in ["haswell-on-pex"]:
             # baseline
             filename = "_".join([platform, form+"_slateexpr", mesh, setting[platform]["proc"], "1", vec, compiler]) + ".csv"
@@ -279,6 +282,8 @@ for form in forms:
                 result[(form, mesh, int(row["p"]))]['extend_quad'] = "{0:d}".format(int(row["extend_quad"]))
                 result[(form, mesh, int(row["p"]))]['speed up ' + platform] = "{0:.1f}".format(row["speed up " + platform])
 
+                result_s[plen*i+idx, j] = "{0:.1f}".format(row["speed up " + platform])
+                result_ai[plen*i+idx, j] = "{0:0.1f}".format(row["ai"])
 
 string = ""
 for form in forms:
@@ -293,5 +298,9 @@ for form in forms:
 print(string)
 
 
-
-
+plt.figure(figsize=(6,5))
+ax = sns.heatmap(result_s, robust=True, annot=result_ai, fmt='g', cmap="Reds", xticklabels=meshes,
+                 yticklabels=list([f"{f} {p}" if p==3  else p for f in forms for p in range(plen) ]),
+                 cbar_kws={'label': 'speedup'})
+plt.tight_layout()
+plt.savefig("plots/slate/"+"tsslac-flame-" + platform + ".pdf", format="pdf", bbox_inches='tight')
