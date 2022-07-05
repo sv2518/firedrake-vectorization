@@ -220,7 +220,7 @@ for idx, simd in enumerate(setting[platform]["simds"]):
 
     ax.set_ylim(bottom=setting[platform]["ybottom"], top=setting[platform]["ytop"])
     ax.set_xlim(left=setting[platform]["xleft"], right=3000)
-    ax.set_title(("Baseline" if simd == "1" else "Cross-element vectorization"))
+    # ax.set_title(("Baseline" if simd == "1" else "Cross-element vectorization"))
     ax.set_ylabel("GFLOPS / s")
     ax.set_xlabel("Arithmetic intensity")
 
