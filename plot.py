@@ -20,7 +20,7 @@ cpu["skylake"] = {
 }
 cpu["haswell-on-pex"] = {
     "peak_flop": 2.6e9 * (2*8) * 4 * 2 * 2,  # clock x cores x simd x fma x port
-    "peak_bw": 2*59e9,
+    "peak_bw": 59e9,
 }
 
 
