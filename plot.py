@@ -132,7 +132,7 @@ plt.figlegend(plots, ["GCC", "clang", "baseline"], ncol=5,
 
 plt.tight_layout()
 plt.subplots_adjust(bottom=0.15)
-plt.savefig("plots/slate/"+platform + "-" + vec + ".pdf", format="pdf")
+plt.savefig("plots/slate/tsslac-"+platform + "-" + vec + ".pdf", format="pdf")
 
 
 # roofline
@@ -227,7 +227,7 @@ plt.subplots_adjust(bottom=0.3)
 lgd = plt.figlegend(plots, names, ncol=5, 
                     loc = "center", bbox_to_anchor=[0.5, 0.1], frameon=False)
 # plt.figlegend(linpack, ["LINPACK"], loc = "center", bbox_to_anchor=[0.7, 0.1], frameon=False)
-plt.savefig("plots/slate/"+"roofline-" + platform + ".pdf", format="pdf", bbox_extra_artists=(lgd,), bbox_inches='tight')
+plt.savefig("plots/slate/"+"tsslac-roofline-" + platform + ".pdf", format="pdf", bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 
 # populate table in paper
