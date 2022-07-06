@@ -173,15 +173,16 @@ setting = {
     "haswell-on-pex": {
         "simds": ["1", "4"],
         "proc": "32" if hyperthreading else "16",
-        "yticks": [1, 5, 10, 20, 50, 100, 200, 300, 500, 2000],
+        "yticks": [2, 5, 10, 20, 50, 100, 200, 300, 500, 1000],
         "ytop": 1000,
-    "ybottom": 3,
+    "ybottom": 1,
     "xleft": 0.1,
     },
 }
 
 x = "ai"
 y = "flop / s"
+xmax = 10000
 
 plots = []
 
@@ -193,7 +194,7 @@ for idx, simd in enumerate(setting[platform]["simds"]):
     ax.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
     rate = cpu[platform]['peak_bw'] / 1e9
-    plot, = ax.plot([0.1, cpu[platform]['peak_flop']/1e9/rate, 3000],
+    plot, = ax.plot([0.1, cpu[platform]['peak_flop']/1e9/rate, xmax],
                     [rate*0.1, cpu[platform]['peak_flop']/1e9, cpu[platform]['peak_flop']/1e9], linewidth=2,
                     color='grey')
     # plot, = ax.plot([cpu[platform]['peak_flop_linpack']/1e9/rate, 3000],
@@ -219,8 +220,8 @@ for idx, simd in enumerate(setting[platform]["simds"]):
                 plots.append(plot)
 
     ax.set_ylim(bottom=setting[platform]["ybottom"], top=setting[platform]["ytop"])
-    ax.set_xlim(left=setting[platform]["xleft"], right=3000)
-    ax.set_title(("Baseline" if simd == "1" else "Cross-element vectorization"))
+    ax.set_xlim(left=setting[platform]["xleft"], right=xmax)
+    ax.set_title(("Baseline Slate DG" if simd == "1" else "Cross-element vectorization Slate DG"))
     ax.set_ylabel("GFLOPS / s")
     ax.set_xlabel("Arithmetic intensity")
 
