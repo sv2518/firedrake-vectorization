@@ -2,6 +2,7 @@ from firedrake import *
 from forms import *
 from tsfc import compile_form
 from firedrake.slate.slac.compiler import compile_expression
+from firedrake.slate.slate import TensorBase
 import loopy as lp
 import numpy as np
 import argparse
@@ -43,6 +44,11 @@ if form_str in ["mass", "helmholtz"]:
     V = FunctionSpace(mesh, "CG", p)
 elif form_str in ["laplacian", "elasticity", "hyperelasticity", "holzapfel"]:
     V = VectorFunctionSpace(mesh, "CG", p)
+
+elif "inner_schur" in form_str:
+    V = VectorFunctionSpace(mesh, "DG", p)
+elif "outer_schur" in form_str:
+    V = VectorFunctionSpace(mesh, "DGT", p)
 else:
     raise AssertionError()
 
@@ -56,10 +62,9 @@ else:
 
 form = eval(form_str)(p, p, mesh, f)
 y_form = action(form, x)
-slate_expr = Tensor(action(form, x)) + Tensor(action(form, x)) - Tensor(action(form, x))
 y = Function(V)
 for i in range(repeat):
-   assemble(slate_expr, tensor=y)
+   assemble(y_form, tensor=y)
    y.dat.data
 
 if args.print:
@@ -78,8 +83,13 @@ if rank == 0:
     print("CELLS= {0}".format(cells))
     print("DOFS= {0}".format(dofs))
 
-    tunit = compile_expression(slate_expr, coffee=False)[0].kinfo.kernel.code
-    name = "slate_wrapper"
+    if isinstance(y_form, TensorBase):
+        tunit = compile_expression(y_form, coffee=False)[0].kinfo.kernel.code
+        name = "slate_wrapper"
+    else:
+        tunit = compile_form(y_form, coffee=False)[0].kinfo.kernel.code
+        name, = [name for name in tunit.callables_table]
+
     prog = tunit.with_entrypoints(name)
     knl = prog.default_entrypoint
     warnings = list(knl.silenced_warnings)
@@ -87,7 +97,7 @@ if rank == 0:
     knl = knl.copy(silenced_warnings=warnings)
     prog = prog.with_kernel(knl)
     op_map = lp.get_op_map(prog, subgroup_size=1)
-    mem_map = lp.get_mem_access_map(prog, subgroup_size=1)  # Is subgroup_size=1 correct?
+    mem_map = lp.get_mem_access_map(prog, subgroup_size=1)
 
     for op in ['add', 'sub', 'mul', 'div']:
         print("{0}S= {1}".format(op.upper(), op_map.filter_by(name=[op], dtype=[np.float64]).eval_and_sum({})))
