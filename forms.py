@@ -164,3 +164,130 @@ def holzapfel(p, q, mesh, nf=0):
     #
     # f = [Function(P).assign(1.0) for _ in range(nf)]
     # return derivative(reduce(inner, iter + list(map(div, f)))*dx, u)
+
+
+def _inner_schur(a):
+    # Using Slate expressions only
+    _O = Tensor(a)
+    O = _O.blocks
+
+    # split mixed matrix in blocks
+    A00, A01, A10, A11  = O[0, 0], O[0, 1], O[1, 0], O[1, 1]
+    # construct inverses on A00 and inner Schur complement
+    A00_inv = A00.inverse(1e-12, 1e-12)
+    S_inv = (A11 - A10 * A00_inv * A01).inverse(1e-12, 1e-12)
+    return A00_inv, S_inv
+
+
+def _outer_schur(a, A00_inv, inner_S_inv):
+    # Using Slate expressions only
+    _O = Tensor(a)
+    O = _O.blocks
+
+    # split mixed matrix in blocks
+    A00, A01, A10, A11  = O[0, 0], O[0, 1], O[1, 0], O[1, 1]
+    KT0, KT1 = O[0, 2], O[1, 2]
+    K0, K1 = O[2, 0], O[2, 1]
+    J = O[2, 2]
+
+    # construct inverses on A00 and inner Schur complement
+    A00_inv = A00.inverse(1e-12, 1e-12)
+    inner_S_inv = (A11 - A10 * A00_inv * A01).inverse(1e-12, 1e-12)
+    
+    # build outer Schur complement
+    K_Ainv_block1 = [K0, -K0 * A00_inv * A01 + K1]
+    K_Ainv_block2 = [K_Ainv_block1[0] * A00_inv,
+                     K_Ainv_block1[1] * inner_S_inv]
+    K_Ainv_block3 = [K_Ainv_block2[0] - K_Ainv_block2[1] * A10 * A00_inv,
+                     K_Ainv_block2[1]]
+    return J - K_Ainv_block3[0] * KT0 + K_Ainv_block3[1] * KT1
+    
+
+def outer_schur(p, q, mesh, nf=0):
+    x = SpatialCoordinate(mesh)
+    n = FacetNormal(mesh)
+    
+    if mesh.ufl_cell().is_simplex():
+        U_d = FunctionSpace(mesh, "DRT", p+1)
+    else:
+        # Break the RT space in 2 steps because
+        # the equvialent to DRT is not defined on this mesh
+        # 1) construct RT on tensor product element first
+        RT = FiniteElement("RTCF", quadrilateral, p+1)
+        DG_v = FiniteElement("DG", interval, p)
+        DG_h = FiniteElement("DQ", quadrilateral, p)
+        CG = FiniteElement("CG", interval, p+1)
+        HDiv_ele = EnrichedElement(HDiv(TensorProductElement(RT, DG_v)),
+                                HDiv(TensorProductElement(DG_h, CG)))
+        U = FunctionSpace(mesh, HDiv_ele)
+        # 2) then break the space
+        broken_elements = ufl.MixedElement([ufl.BrokenElement(Vi.ufl_element()) for Vi in U])
+        U_d = FunctionSpace(mesh, broken_elements)
+    V = FunctionSpace(mesh, "DQ", p)
+    T = FunctionSpace(mesh, "DGT", p)
+    W = U_d * V * T
+
+    sigma, u, lambdar = TrialFunctions(W)
+    tau, v, gammar = TestFunctions(W)
+
+    f = Function(V)
+    f.interpolate(-2*(x[0]-1)*x[0] - 2*(x[1]-1)*x[1])
+
+    a = (inner(sigma, tau)*dx - inner(u, div(tau))*dx
+         + inner(div(sigma), v)*dx)
+    if mesh.ufl_cell().is_simplex():
+        a += (inner(lambdar('+'), jump(tau, n=n))*dS
+              - inner(jump(sigma, n=n), gammar('+'))*dS)
+    else:
+        a += (inner(lambdar('+'), jump(tau, n=n))*dS_h
+              + inner(lambdar('+'), jump(tau, n=n))*dS_v
+              - inner(jump(sigma, n=n), gammar('+'))*dS_h
+              - inner(jump(sigma, n=n), gammar('+'))*dS_v)
+
+    A00_inv, inner_S_inv = _inner_schur(a)
+    return _outer_schur(a, A00_inv, inner_S_inv)
+
+
+def inner_schur(p, q, mesh, nf=0):
+    x = SpatialCoordinate(mesh)
+    n = FacetNormal(mesh)
+    
+    if mesh.ufl_cell().is_simplex():
+        U_d = FunctionSpace(mesh, "DRT", p+1)
+    else:
+        # Break the RT space in 2 steps because
+        # the equvialent to DRT is not defined on this mesh
+        # 1) construct RT on tensor product element first
+        RT = FiniteElement("RTCF", quadrilateral, p+1)
+        DG_v = FiniteElement("DG", interval, p)
+        DG_h = FiniteElement("DQ", quadrilateral, p)
+        CG = FiniteElement("CG", interval, p+1)
+        HDiv_ele = EnrichedElement(HDiv(TensorProductElement(RT, DG_v)),
+                                HDiv(TensorProductElement(DG_h, CG)))
+        U = FunctionSpace(mesh, HDiv_ele)
+        # 2) then break the space
+        broken_elements = ufl.MixedElement([ufl.BrokenElement(Vi.ufl_element()) for Vi in U])
+        U_d = FunctionSpace(mesh, broken_elements)
+    V = FunctionSpace(mesh, "DQ", p)
+    T = FunctionSpace(mesh, "DGT", p)
+    W = U_d * V * T
+
+    sigma, u, lambdar = TrialFunctions(W)
+    tau, v, gammar = TestFunctions(W)
+
+    f = Function(V)
+    f.interpolate(-2*(x[0]-1)*x[0] - 2*(x[1]-1)*x[1])
+
+    a = (inner(sigma, tau)*dx - inner(u, div(tau))*dx
+         + inner(div(sigma), v)*dx)
+    if mesh.ufl_cell().is_simplex():
+        a += (inner(lambdar('+'), jump(tau, n=n))*dS
+              - inner(jump(sigma, n=n), gammar('+'))*dS)
+    else:
+        a += (inner(lambdar('+'), jump(tau, n=n))*dS_h
+              + inner(lambdar('+'), jump(tau, n=n))*dS_v
+              - inner(jump(sigma, n=n), gammar('+'))*dS_h
+              - inner(jump(sigma, n=n), gammar('+'))*dS_v)
+
+    _, inner_S_inv = _inner_schur(a)
+    return inner_S_inv
