@@ -102,7 +102,7 @@ for p in ps:
         print("opts="+str(opts))
         cmd = ["mpiexec", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
                "python", "oneform.py", "--n", str(n), "--p", str(p), "--f", str(f),
-               "--form", form, "--mesh", mesh, "--repeat", str(repeat), "--opts", opts[0], "--matfree", opts[1]]
+               "--form", form, "--mesh", mesh, "--repeat", str(repeat), "--optimise", opts[0], "--matfree", opts[1]]
         cmd.append("-log_view")
 
         output = subprocess.run(cmd, stdout=subprocess.PIPE).stdout.decode("utf-8").split()
