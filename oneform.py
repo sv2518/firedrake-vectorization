@@ -18,8 +18,9 @@ parser.add_argument('--f', dest='f', default=0, type=int)
 parser.add_argument('--repeat', dest='repeat', default=1, type=int)
 parser.add_argument('--mesh', dest='m', default="tri", type=str, choices=["quad", "tet", "hex", "tri"])
 parser.add_argument('--print', default=False, action="store_true")
-parser.add_argument('--optimise', dest='optimise', default=False, action="store_true", type=bool)
-parser.add_argument('--matfree', dest='matfree', default=False, action="store_true", type=bool)
+parser.add_argument('--optimise', dest='optimise', default=False, action="store_true")
+parser.add_argument('--matfree', dest='matfree', default=False, action="store_true")
+parser.add_argument('--name', dest='knl_name', default='slate_wrapper', type=str)
 args, _ = parser.parse_known_args()
 
 n = args.n
@@ -30,6 +31,7 @@ m = args.m
 form_str = args.form
 optimise = args.optimise
 matfree = args.matfree
+knl_name = args.knl_name
 
 if m == "quad":
     mesh = IntervalMesh(n, n)
@@ -50,9 +52,9 @@ elif form_str in ["laplacian", "elasticity", "hyperelasticity", "holzapfel"]:
     V = VectorFunctionSpace(mesh, "CG", p)
 
 elif "inner_schur" in form_str:
-    V = VectorFunctionSpace(mesh, "DG", p)
+    V = FunctionSpace(mesh, "DG", p)
 elif "outer_schur" in form_str:
-    V = VectorFunctionSpace(mesh, "DGT", p)
+    V = FunctionSpace(mesh, "DGT", p)
 else:
     raise AssertionError()
 
@@ -94,12 +96,10 @@ if rank == 0:
 
     if isinstance(y_form, TensorBase):
         tunit = compile_expression(y_form, coffee=False)[0].kinfo.kernel.code
-        name = "slate_wrapper"
     else:
         tunit = compile_form(y_form, coffee=False)[0].kinfo.kernel.code
-        name, = [name for name in tunit.callables_table]
 
-    prog = tunit.with_entrypoints(name)
+    prog = tunit.with_entrypoints(knl_name)
     knl = prog.default_entrypoint
     warnings = list(knl.silenced_warnings)
     warnings.extend(["insn_count_subgroups_upper_bound", "no_lid_found"])
