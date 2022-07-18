@@ -51,7 +51,7 @@ do
             do
                 for comp in ${compiler[@]}
                 do
-                    for op in ${opts}
+                    for op in ${opts[@]}
                     do
                         export TJ_FORM=$f
                         export TJ_MESH=$m
