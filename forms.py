@@ -1,6 +1,6 @@
 from firedrake import *
 from functools import reduce
-
+import ufl
 
 def mass(p, q, mesh, nf=0):
     V = FunctionSpace(mesh, 'CG', p)

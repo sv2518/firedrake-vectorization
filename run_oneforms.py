@@ -70,20 +70,20 @@ except:
 
 
 if mesh == "hex":
-    ps = range(1, 7)
+    ps = range(1, 2)
 elif mesh == "quad":
-    ps = range(1, 7)
+    ps = range(1, 2)
 elif mesh == "tri":
-    ps = range(1, 7)
+    ps = range(1, 2)
 elif mesh == "tet":
-    ps = range(1, 7)
+    ps = range(1, 2)
 else:
     raise AssertionError()
 
 if "schur" in form:
-    knl_name = "wrap_slate_loopy_knl_7" if opts[1] and opts[0] else "wrap_wrap_slate_loopy_knl_2" if opts[0] else "wrap_wrap_slate_loopy_knl_0"
+    knl_name = "slate_loopy_knl_7" if opts[1] and opts[0] else "wrap_slate_loopy_knl_2" if opts[0] else "wrap_slate_loopy_knl_0"
 else:
-    knl_name = "wrap_form0_cell_integral_otherwise"
+    knl_name = "form0_cell_integral_otherwise"
 
 fs = [0]
 repeat = 5
@@ -102,12 +102,13 @@ for p in ps:
         print("opts="+str(opts))
         cmd = ["mpiexec", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
                "python", "oneform.py", "--n", str(n), "--p", str(p), "--f", str(f),
-               "--form", form, "--mesh", mesh, "--repeat", str(repeat), "--optimise", opts[0], "--matfree", opts[1]]
+               "--form", form, "--mesh", mesh, "--repeat", str(repeat), "--optimise", 
+               str(opts[0]), "--matfree", str(opts[1]), "--name", knl_name]
         cmd.append("-log_view")
 
         output = subprocess.run(cmd, stdout=subprocess.PIPE).stdout.decode("utf-8").split()
         
-        time = float(output[output.index(f"Parloop_Cells_{knl_name}") + 3]) / repeat
+        time = float(output[output.index(f"Parloop_Cells_wrap_{knl_name}") + 3]) / repeat
         dofs = int(output[output.index("DOFS=") + 1])
         cells = int(output[output.index("CELLS=") + 1])
         adds = int(output[output.index("ADDS=") + 1])
@@ -115,7 +116,7 @@ for p in ps:
         muls = int(output[output.index("MULS=") + 1])
         divs = int(output[output.index("DIVS=") + 1])
         mems = int(output[output.index("MEMS=") + 1])
-        bytes = int(output[output.index(f"{knl_name}_BYTES=") + 1])
+        bytes = int(output[output.index(f"wrap_{knl_name}_BYTES=") + 1])
         instructions = int(output[output.index("INSTRUCTIONS=") + 1])
         loops = int(output[output.index("LOOPS=") + 1])
         dof_loop_extent = int(output[output.index("DOF_LOOP_EXTENT=") + 1])
@@ -127,7 +128,7 @@ for p in ps:
         result.append((n, p, f, dofs, cells, adds, subs, muls, divs, mems, bytes, time,
                        instructions, loops, dof_loop_extent, quadrature_loop_extent))
 
-csvfile = open('csv/{0}{1}_slateexpr_{2}_{3}_{4}_{5}{6}.csv'.format(prefix, form, mesh, str(np), simd_width, vect_strategy, suffix), 'w')
+csvfile = open('csv/{0}{1}_matfslateexpr_{2}_{3}_{4}_{5}{6}_{7}_{8}.csv'.format(prefix, form, mesh, str(np), simd_width, vect_strategy, suffix, str(opts[0]), str(opts[1])), 'w')
 writer = csv.writer(csvfile)
 writer.writerows(result)
 csvfile.close()
