@@ -99,9 +99,10 @@ for p in ps:
     for f in fs:
         n = get_n(mesh, p)
         print("n={0}, p={1}, f={2}".format(n, p, f))
+        print("opts="+str(opts))
         cmd = ["mpiexec", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
                "python", "oneform.py", "--n", str(n), "--p", str(p), "--f", str(f),
-               "--form", form, "--mesh", mesh, "--repeat", str(repeat), "--opts", opts]
+               "--form", form, "--mesh", mesh, "--repeat", str(repeat), "--opts", opts[0], "--matfree", opts[1]]
         cmd.append("-log_view")
 
         output = subprocess.run(cmd, stdout=subprocess.PIPE).stdout.decode("utf-8").split()
