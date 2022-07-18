@@ -18,6 +18,7 @@ parser.add_argument('--f', dest='f', default=0, type=int)
 parser.add_argument('--repeat', dest='repeat', default=1, type=int)
 parser.add_argument('--mesh', dest='m', default="tri", type=str, choices=["quad", "tet", "hex", "tri"])
 parser.add_argument('--print', default=False, action="store_true")
+parser.add_argument('--opts', dest='opts', default=(False, False), action="store_true", type=tuple)
 args, _ = parser.parse_known_args()
 
 n = args.n
@@ -26,6 +27,7 @@ f = args.f
 repeat = args.repeat
 m = args.m
 form_str = args.form
+opts = args.opts
 
 if m == "quad":
     mesh = IntervalMesh(n, n)
@@ -59,12 +61,17 @@ if V.ufl_element().value_size() > 1:
     x.interpolate(as_vector(xs))
 else:
     x.interpolate(reduce(operator.add, xs))
+    
+if isinstance(form_str, TensorBase):
+    form_compiler_parameters={"slate_compiler": {"optimise": opts[0], "replace_mul": opts[1]}}
+else:
+    form_compiler_parameters={}
 
 form = eval(form_str)(p, p, mesh, f)
 y_form = action(form, x)
 y = Function(V)
 for i in range(repeat):
-   assemble(y_form, tensor=y)
+   assemble(y_form, tensor=y, form_compiler_parameters=form_compiler_parameters)
    y.dat.data
 
 if args.print:
