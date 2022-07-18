@@ -52,6 +52,7 @@ do
                 for comp in ${compiler[@]}
                 do
                     for op in ${opts}
+                    do
                         export TJ_FORM=$f
                         export TJ_MESH=$m
                         export SV_OPTS=$op
@@ -72,6 +73,7 @@ do
                         firedrake-clean
                         python run_oneforms.py --prefix "$arch"_ --suffix "_$comp"
                         python run_oneforms.py --prefix "$arch"_ --suffix "_$comp"
+                    done
                 done
             done
         done
