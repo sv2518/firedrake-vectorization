@@ -37,7 +37,7 @@ else
 fi
 mesh=('hex')
 form=('inner_schur')
-vs=("cross-element")  # vectorization strategy
+vs=('novect')  # vectorization strategy
 opts=("NOP" "MOP" "FOP")
 export PYOP2_EXTRA_INFO=1  # switch on timing mode
 
@@ -57,7 +57,12 @@ do
                         export TJ_MESH=$m
                         export SV_OPTS=$op
                         export PYOP2_SIMD_WIDTH=$bs
-                        export PYOP2_VECT_STRATEGY=$v
+                        if [ $v == 'novect' ]
+                        then
+                            export PYOP2_VECT_STRATEGY=""
+                        else
+                            export PYOP2_VECT_STRATEGY=$v
+                        fi
                         #export PYOP2_CC=$comp
                         export MPICH_CC=$comp
                         #export OMPI_CC=$comp
