@@ -40,8 +40,8 @@ if m == "quad":
 elif m == "tet":
     mesh = CubeMesh(n, n, n, L=n)
 elif m == "hex":
-    mesh = SquareMesh(n, n, L=n, quadrilateral=True)
-    mesh = ExtrudedMesh(mesh, n, layer_height=1.0)
+    mesh = SquareMesh(n, n, L=1, quadrilateral=True)
+    mesh = ExtrudedMesh(mesh, n)
 else:
     assert m == "tri"
     mesh = SquareMesh(n, n, L=n)
@@ -52,26 +52,30 @@ elif form_str in ["laplacian", "elasticity", "hyperelasticity", "holzapfel"]:
     V = VectorFunctionSpace(mesh, "CG", p)
 
 elif "inner_schur" in form_str:
-    V = FunctionSpace(mesh, "DG", p)
+    V = FunctionSpace(mesh, "DG", p-1)
 elif "outer_schur" in form_str:
-    V = FunctionSpace(mesh, "DGT", p)
+    V = FunctionSpace(mesh, "DGT", p-1)
 else:
     raise AssertionError()
 
 x = Function(V)
 
 xs = SpatialCoordinate(mesh)
-if V.ufl_element().value_size() > 1:
-    x.interpolate(as_vector(xs))
+if "schur" in form_str:
+    x.project(xs[0]*(1-xs[0])*xs[1]*(1-xs[1])*xs[2]*(1-xs[2]), use_slate_for_inverse=False)
 else:
-    x.interpolate(reduce(operator.add, xs))
-    
-if isinstance(form_str, TensorBase):
+    if V.ufl_element().value_size() > 1:
+        x.interpolate(as_vector(xs))
+    else:
+        x.interpolate(reduce(operator.add, xs))
+
+
+form = eval(form_str)(p-1, p-1, mesh, f)
+if isinstance(form, TensorBase):
     form_compiler_parameters={"slate_compiler": {"optimise": optimise, "replace_mul": matfree}}
 else:
     form_compiler_parameters={}
 
-form = eval(form_str)(p, p, mesh, f)
 y_form = action(form, x)
 y = Function(V)
 for i in range(repeat):
@@ -96,6 +100,7 @@ if rank == 0:
 
     if isinstance(y_form, TensorBase):
         tunit = compile_expression(y_form, coffee=False)[0].kinfo.kernel.code
+        knl_name, = tuple(filter(lambda name: name.startswith("slate_loopy_knl"), tunit.callables_table.keys()))
     else:
         tunit = compile_form(y_form, coffee=False)[0].kinfo.kernel.code
 

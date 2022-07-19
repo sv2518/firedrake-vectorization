@@ -58,19 +58,19 @@ try:
 except:
     np = "1"
 
+optimise = ""
+matfree = ""
 try:
-    if os.environ["SV_OPT"] == "NOP":
-        opts = (False, False)
-    elif os.environ["SV_OPT"] == "MOP":
-        opts = (True, False)
-    elif os.environ["SV_OPT"] == "FOP":
-        opts = (True, True)
+    if os.environ["SV_OPTS"] == "MOP":
+        optimise =  "--optimise"
+    elif os.environ["SV_OPTS"] == "FOP":
+        optimise = "--optimise"
+        matfree = "--matfree"
 except:
-    opts = (False, False)
-
+    pass
 
 if mesh == "hex":
-    ps = range(1, 2)
+    ps = range(1, 5)
 elif mesh == "quad":
     ps = range(1, 2)
 elif mesh == "tri":
@@ -80,8 +80,10 @@ elif mesh == "tet":
 else:
     raise AssertionError()
 
-if "schur" in form:
-    knl_name = "slate_loopy_knl_7" if opts[1] and opts[0] else "wrap_slate_loopy_knl_2" if opts[0] else "wrap_slate_loopy_knl_0"
+if "inner_schur" in form:
+    knl_name = "slate_loopy_knl_0" if optimise and matfree else "wrap_slate_loopy_knl_0"
+elif "outer_schur" in form:
+    knl_name = "slate_loopy_knl_7" if optimise and matfree else "wrap_slate_loopy_knl_2" if optimise else "wrap_slate_loopy_knl_0"
 else:
     knl_name = "form0_cell_integral_otherwise"
 
@@ -99,14 +101,16 @@ for p in ps:
     for f in fs:
         n = get_n(mesh, p)
         print("n={0}, p={1}, f={2}".format(n, p, f))
-        print("opts="+str(opts))
-        cmd = ["mpiexec", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
+        print(f"opts={optimise}{matfree}")
+        cmd = [#"mpiexec", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
                "python", "oneform.py", "--n", str(n), "--p", str(p), "--f", str(f),
-               "--form", form, "--mesh", mesh, "--repeat", str(repeat), "--optimise", 
-               str(opts[0]), "--matfree", str(opts[1]), "--name", knl_name]
+               "--form", form, "--mesh", mesh, "--repeat", str(repeat),
+               optimise, matfree, "--name", knl_name]
         cmd.append("-log_view")
 
-        output = subprocess.run(cmd, stdout=subprocess.PIPE).stdout.decode("utf-8").split()
+        output = subprocess.run(cmd, stdout=subprocess.PIPE).stdout.decode("utf-8")
+        # print(output)
+        output = output.split()
         
         time = float(output[output.index(f"Parloop_Cells_wrap_{knl_name}") + 3]) / repeat
         dofs = int(output[output.index("DOFS=") + 1])
@@ -128,7 +132,7 @@ for p in ps:
         result.append((n, p, f, dofs, cells, adds, subs, muls, divs, mems, bytes, time,
                        instructions, loops, dof_loop_extent, quadrature_loop_extent))
 
-csvfile = open('csv/{0}{1}_matfslateexpr_{2}_{3}_{4}_{5}{6}_{7}_{8}.csv'.format(prefix, form, mesh, str(np), simd_width, vect_strategy, suffix, str(opts[0]), str(opts[1])), 'w')
+csvfile = open('csv/{0}{1}_matfslateexpr_{2}_{3}_{4}_{5}{6}_optimise{7}_matfree{8}.csv'.format(prefix, form, mesh, str(np), simd_width, vect_strategy, suffix, bool(optimise), bool(matfree)), 'w')
 writer = csv.writer(csvfile)
 writer.writerows(result)
 csvfile.close()
