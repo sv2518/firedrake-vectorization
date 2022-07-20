@@ -204,11 +204,12 @@ def _outer_schur(a, A00_inv, inner_S_inv):
     
 
 def outer_schur(p, q, mesh, nf=0):
-    x = SpatialCoordinate(mesh)
     n = FacetNormal(mesh)
     
-    if mesh.ufl_cell().is_simplex():
+    if mesh.ufl_cell().is_simplex() or mesh._geometric_dimension < 3:
         U_d = FunctionSpace(mesh, "DRT", p+1)
+        V = FunctionSpace(mesh, "DG", p)
+        T = FunctionSpace(mesh, "DGT", p)
     else:
         # Break the RT space in 2 steps because
         # the equvialent to DRT is not defined on this mesh
@@ -223,15 +224,12 @@ def outer_schur(p, q, mesh, nf=0):
         # 2) then break the space
         broken_elements = ufl.MixedElement([ufl.BrokenElement(Vi.ufl_element()) for Vi in U])
         U_d = FunctionSpace(mesh, broken_elements)
-    V = FunctionSpace(mesh, "DQ", p)
-    T = FunctionSpace(mesh, "DGT", p)
+        V = FunctionSpace(mesh, "DQ", p)
+        T = FunctionSpace(mesh, "DGT", p)
     W = U_d * V * T
 
     sigma, u, lambdar = TrialFunctions(W)
     tau, v, gammar = TestFunctions(W)
-
-    f = Function(V)
-    f.interpolate(-2*(x[0]-1)*x[0] - 2*(x[1]-1)*x[1])
 
     a = (inner(sigma, tau)*dx - inner(u, div(tau))*dx
          + inner(div(sigma), v)*dx)
@@ -249,34 +247,40 @@ def outer_schur(p, q, mesh, nf=0):
 
 
 def inner_schur(p, q, mesh, nf=0):
-    x = SpatialCoordinate(mesh)
     n = FacetNormal(mesh)
     
     if mesh.ufl_cell().is_simplex():
         U_d = FunctionSpace(mesh, "DRT", p+1)
+        V = FunctionSpace(mesh, "DG", p)
+        T = FunctionSpace(mesh, "DGT", p)
     else:
-        # Break the RT space in 2 steps because
-        # the equvialent to DRT is not defined on this mesh
-        # 1) construct RT on tensor product element first
-        RT = FiniteElement("RTCF", quadrilateral, p+1)
-        DG_v = FiniteElement("DG", interval, p)
-        DG_h = FiniteElement("DQ", quadrilateral, p)
-        CG = FiniteElement("CG", interval, p+1)
-        HDiv_ele = EnrichedElement(HDiv(TensorProductElement(RT, DG_v)),
-                                HDiv(TensorProductElement(DG_h, CG)))
-        U = FunctionSpace(mesh, HDiv_ele)
-        # 2) then break the space
-        broken_elements = ufl.MixedElement([ufl.BrokenElement(Vi.ufl_element()) for Vi in U])
-        U_d = FunctionSpace(mesh, broken_elements)
-    V = FunctionSpace(mesh, "DQ", p)
-    T = FunctionSpace(mesh, "DGT", p)
+        if mesh._geometric_dimension < 3:
+            # Break the RT space because there is no "DQT" element
+            U = FunctionSpace(mesh, "RTCF", p+1)
+            broken_elements = ufl.MixedElement([ufl.BrokenElement(Vi.ufl_element()) for Vi in U])
+            U_d = FunctionSpace(mesh, broken_elements)
+            V = FunctionSpace(mesh, "DQ", p)
+            T = FunctionSpace(mesh, "DGT", p)
+        else:
+            # Break the RT space in 2 steps because
+            # the equvialent to DRT is not defined on this mesh
+            # 1) construct RT on tensor product element first
+            RT = FiniteElement("RTCF", quadrilateral, p+1)
+            DG_v = FiniteElement("DG", interval, p)
+            DG_h = FiniteElement("DQ", quadrilateral, p)
+            CG = FiniteElement("CG", interval, p+1)
+            HDiv_ele = EnrichedElement(HDiv(TensorProductElement(RT, DG_v)),
+                                    HDiv(TensorProductElement(DG_h, CG)))
+            U = FunctionSpace(mesh, HDiv_ele)
+            # 2) then break the space
+            broken_elements = ufl.MixedElement([ufl.BrokenElement(Vi.ufl_element()) for Vi in U])
+            U_d = FunctionSpace(mesh, broken_elements)
+            V = FunctionSpace(mesh, "DQ", p)
+            T = FunctionSpace(mesh, "DGT", p)
     W = U_d * V * T
 
     sigma, u, lambdar = TrialFunctions(W)
     tau, v, gammar = TestFunctions(W)
-
-    f = Function(V)
-    f.interpolate(-2*(x[0]-1)*x[0] - 2*(x[1]-1)*x[1])
 
     a = (inner(sigma, tau)*dx - inner(u, div(tau))*dx
          + inner(div(sigma), v)*dx)
