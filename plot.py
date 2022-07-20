@@ -23,7 +23,7 @@ cpu["skylake"] = {
     "peak_bw": 36.6e9,
 }
 cpu["haswell-on-pex"] = {
-    "peak_flop": 1.7e9 * (1) * 1, #* 2 * 2,  # clock x cores x simd x fma x port
+    "peak_flop": 2.6e9 * (2*8) * 4 * 2 * 2,  # clock x cores x simd x fma x port
     "peak_bw": 59e9,
 }
 
@@ -71,9 +71,9 @@ if throughput:
         simd = "8"
         threads = "32" if hyperthreading else "16"
         
-    compilers = ["gcc"]
+    compilers = ["gcc", "clang"]
     x = "p"
-    y = "flop / s"
+    y = "flop / peak"
     # linpack_scale = cpu[platform]['peak_flop'] / cpu[platform]['peak_flop_linpack']
 
     palette = sns.color_palette(n_colors=5)
@@ -98,7 +98,7 @@ if throughput:
             ax1 = plt.subplot(len(forms), len(meshes), mesh_id + form_id*len(meshes) + 1)
             marker = itertools.cycle(('o', 's', '*', '^', "D"))
             color = itertools.cycle((palette[0], palette[3], palette[1], palette[2], palette[4]))
-            linestyle = itertools.cycle(('-', '--', '-.', ':', '.'))
+            linestyle = itertools.cycle(('-', '--', '-.', ':', 'dotted'))
             names = names + ["baseline"]
             plots = []
             for df, n in zip(dfs, names):
