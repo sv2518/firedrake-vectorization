@@ -70,7 +70,7 @@ except:
     pass
 
 if mesh == "hex":
-    ps = range(1, 7)
+    ps = range(1, 5)
 elif mesh == "quad":
     ps = range(1, 7)
 elif mesh == "tri":

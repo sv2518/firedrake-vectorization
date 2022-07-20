@@ -35,7 +35,7 @@ else
         export TJ_MPI_MAP_BY="core"
     fi
 fi
-mesh=('quad' 'tri' 'hex' 'tet')
+mesh=('hex')
 form=('inner_schur')
 vs=('novect')  # vectorization strategy
 opts=("NOP" "MOP" "FOP")
