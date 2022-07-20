@@ -70,13 +70,13 @@ except:
     pass
 
 if mesh == "hex":
-    ps = range(1, 5)
+    ps = range(1, 7)
 elif mesh == "quad":
-    ps = range(1, 2)
+    ps = range(1, 7)
 elif mesh == "tri":
-    ps = range(1, 2)
+    ps = range(1, 7)
 elif mesh == "tet":
-    ps = range(1, 2)
+    ps = range(1, 7)
 else:
     raise AssertionError()
 
