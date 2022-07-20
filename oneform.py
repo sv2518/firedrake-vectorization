@@ -35,7 +35,7 @@ knl_name = args.knl_name
 
 if m == "quad":
     mesh = IntervalMesh(n, n)
-    mesh = ExtrudedMesh(mesh, n, layer_height=1.0)
+    mesh = ExtrudedMesh(mesh, n)
     # mesh = SquareMesh(n, n, L=n, quadrilateral=True)
 elif m == "tet":
     mesh = CubeMesh(n, n, n, L=n)
@@ -52,7 +52,7 @@ elif form_str in ["laplacian", "elasticity", "hyperelasticity", "holzapfel"]:
     V = VectorFunctionSpace(mesh, "CG", p)
 
 elif "inner_schur" in form_str:
-    V = FunctionSpace(mesh, "DG", p-1)
+    V = FunctionSpace(mesh, "DG", p-1) if mesh.ufl_cell().is_simplex() else FunctionSpace(mesh, "DQ", p-1)
 elif "outer_schur" in form_str:
     V = FunctionSpace(mesh, "DGT", p-1)
 else:
@@ -62,7 +62,10 @@ x = Function(V)
 
 xs = SpatialCoordinate(mesh)
 if "schur" in form_str:
-    x.project(xs[0]*(1-xs[0])*xs[1]*(1-xs[1])*xs[2]*(1-xs[2]), use_slate_for_inverse=False)
+    if len(xs) == 3:
+        x.project(xs[0]*(1-xs[0])*xs[1]*(1-xs[1])*xs[2]*(1-xs[2]), use_slate_for_inverse=False)
+    elif len(xs) == 2:
+        x.project(xs[0]*(1-xs[0])*xs[1]*(1-xs[1]), use_slate_for_inverse=False)
 else:
     if V.ufl_element().value_size() > 1:
         x.interpolate(as_vector(xs))
