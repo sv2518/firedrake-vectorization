@@ -141,7 +141,7 @@ if throughput:
 
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.15)
-    plt.savefig("plots/slate/tsslac-"+platform + "-" + vec + ".pdf", format="pdf")
+    plt.savefig("plots/slate/matf-tsslac-"+platform + "-" + vec + ".pdf", format="pdf")
 
 
     # roofline
@@ -239,7 +239,7 @@ if throughput:
         lgd = plt.figlegend(plots, names, ncol=5, 
                             loc = "center", bbox_to_anchor=[0.5, 0.1], frameon=False)
         # plt.figlegend(linpack, ["LINPACK"], loc = "center", bbox_to_anchor=[0.7, 0.1], frameon=False)
-        plt.savefig("plots/slate/"+"tsslac-roofline-" + platform + ".pdf", format="pdf", bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig("plots/slate/"+"matf-tsslac-roofline-" + platform + ".pdf", format="pdf", bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 
 if table:
@@ -315,4 +315,4 @@ if table:
                     yticklabels=list([f"{f} {p}" if p==3  else p for f in forms for p in range(plen) ]),
                     cbar_kws={'label': 'speedup'})
     plt.tight_layout()
-    plt.savefig("plots/slate/"+"tsslac-flame-" + platform + ".pdf", format="pdf", bbox_inches='tight')
+    plt.savefig("plots/slate/"+"matf-tsslac-flame-" + platform + ".pdf", format="pdf", bbox_inches='tight')
