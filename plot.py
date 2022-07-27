@@ -46,7 +46,7 @@ if throughput:
     plt.figure(figsize=(8, 10))
 
     forms = ["inner_schur"]
-    meshes = ["hex"]
+    meshes = ["tri"]
     opts = [(False, False), (True, False), (True, True)]
     platform = "haswell-on-pex"
     hyperthreading = True
@@ -64,14 +64,14 @@ if throughput:
     elif platform == "haswell-on-pex":
         simd = "4"
         if hyperthreading:
-            threads = "32"
+            threads = "2"
         else:
             threads = "16"
     else:
         simd = "8"
         threads = "32" if hyperthreading else "16"
         
-    compilers = ["gcc", "clang"]
+    compilers = ["gcc"]#, "clang"]
     x = "p"
     y = "flop / peak"
     # linpack_scale = cpu[platform]['peak_flop'] / cpu[platform]['peak_flop_linpack']
