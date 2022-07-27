@@ -18,10 +18,10 @@ then
     batchsize=(1)  # 1: not vectorize, 4: vectorize by 4
     if [ $hyperthreading == 1 ]
     then
-        export TJ_NP=32  # number of processes
+        export TJ_NP=2  # number of processes
         export TJ_MPI_MAP_BY="hwthread"
     else
-        export TJ_NP=16
+        export TJ_NP=2
         export TJ_MPI_MAP_BY="core"
     fi
 else
@@ -35,10 +35,10 @@ else
         export TJ_MPI_MAP_BY="core"
     fi
 fi
-mesh=('hex')
+mesh=('tri')
 form=('inner_schur')
 vs=('novect')  # vectorization strategy
-opts=("NOP" "MOP" "FOP")
+opts=("MOP" "FOP")
 export PYOP2_EXTRA_INFO=1  # switch on timing mode
 
 for v in ${vs[@]}
