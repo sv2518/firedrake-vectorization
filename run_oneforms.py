@@ -83,7 +83,7 @@ else:
 if "inner_schur" in form:
     knl_name = "slate_loopy_knl_0" if optimise and matfree else "wrap_slate_loopy_knl_0"
 elif "outer_schur" in form:
-    knl_name = "slate_loopy_knl_7" if optimise and matfree else "wrap_slate_loopy_knl_2" if optimise else "wrap_slate_loopy_knl_0"
+    knl_name = "slate_loopy_knl_0" if optimise and matfree else "wrap_slate_loopy_knl_0" if optimise else "wrap_slate_loopy_knl_0"
 else:
     knl_name = "form0_cell_integral_otherwise"
 
