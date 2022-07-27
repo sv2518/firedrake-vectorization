@@ -1,7 +1,7 @@
 #!/bin/bash
 arch='haswell-on-pex'
 hyperthreading=1
-compiler=('gcc' 'clang')
+compiler=('gcc')
 if [ $arch == "haswell" ]
 then
     batchsize=(1 4)  # 1: not vectorize, 4: vectorize by 4
@@ -36,9 +36,9 @@ else
     fi
 fi
 mesh=('tri')
-form=('inner_schur')
+form=('inner_schur' 'outer_schur')
 vs=('novect')  # vectorization strategy
-opts=("MOP" "FOP")
+opts=("NOP" "MOP" "FOP")
 export PYOP2_EXTRA_INFO=1  # switch on timing mode
 
 for v in ${vs[@]}
