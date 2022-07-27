@@ -38,7 +38,7 @@ def get_n(mesh, p):
         elif p > 2:
             return 1024
         else:
-            return 2048
+            return 2
     else:
         raise AssertionError()
 
@@ -74,7 +74,7 @@ if mesh == "hex":
 elif mesh == "quad":
     ps = range(1, 7)
 elif mesh == "tri":
-    ps = range(1, 7)
+    ps = range(1, 2)
 elif mesh == "tet":
     ps = range(1, 7)
 else:
@@ -88,7 +88,7 @@ else:
     knl_name = "form0_cell_integral_otherwise"
 
 fs = [0]
-repeat = 5
+repeat = 1
 
 simd_width = os.environ['PYOP2_SIMD_WIDTH']
 vect_strategy = os.environ['PYOP2_VECT_STRATEGY']
@@ -102,7 +102,7 @@ for p in ps:
         n = get_n(mesh, p)
         print("n={0}, p={1}, f={2}".format(n, p, f))
         print(f"opts={optimise}{matfree}")
-        cmd = [#"mpiexec", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
+        cmd = ["mpiexec", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
                "python", "oneform.py", "--n", str(n), "--p", str(p), "--f", str(f),
                "--form", form, "--mesh", mesh, "--repeat", str(repeat),
                optimise, matfree, "--name", knl_name]
