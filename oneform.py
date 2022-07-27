@@ -102,7 +102,7 @@ if rank == 0:
     print("DOFS= {0}".format(dofs))
 
     if isinstance(y_form, TensorBase):
-        tunit = compile_expression(y_form, coffee=False)[0].kinfo.kernel.code
+        tunit = compile_expression(y_form, coffee=False, compiler_parameters=form_compiler_parameters)[0].kinfo.kernel.code
         knl_name, = tuple(filter(lambda name: name.startswith("slate_loopy_knl"), tunit.callables_table.keys()))
     else:
         tunit = compile_form(y_form, coffee=False)[0].kinfo.kernel.code
