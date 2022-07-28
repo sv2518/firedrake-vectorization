@@ -102,7 +102,7 @@ for p in ps:
         n = get_n(mesh, p)
         print("n={0}, p={1}, f={2}".format(n, p, f))
         print(f"opts={optimise}{matfree}")
-        cmd = [#"mpiexec", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
+        cmd = ["mpiexec", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
                "python", "oneform.py", "--n", str(n), "--p", str(p), "--f", str(f),
                "--form", form, "--mesh", mesh, "--repeat", str(repeat),
                optimise, matfree, "--name", knl_name]
