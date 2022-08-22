@@ -305,4 +305,3 @@ ax = sns.heatmap(result_s, robust=True, annot=result_ai, fmt='g', cmap="Reds", x
                  cbar_kws={'label': 'speedup'})
 plt.tight_layout()
 plt.savefig("plots/slate/"+"tsslac-flame-" + platform + ".pdf", format="pdf", bbox_inches='tight')
-
