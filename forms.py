@@ -2,7 +2,7 @@ from firedrake import *
 from functools import reduce
 import ufl
 
-def mass(p, q, mesh, nf=0):
+def mass(p, q, mesh, nf=0, prec=None):
     V = FunctionSpace(mesh, 'CG', p)
     P = FunctionSpace(mesh, 'CG', q)
     u = TrialFunction(V)
@@ -12,7 +12,7 @@ def mass(p, q, mesh, nf=0):
     return reduce(inner, f + [it])*dx
 
 
-def helmholtz(p, q, mesh, nf=0):
+def helmholtz(p, q, mesh, nf=0, prec=None):
     V = FunctionSpace(mesh, "CG", p)
     P = FunctionSpace(mesh, "CG", q)
     u = TrialFunction(V)
@@ -22,7 +22,7 @@ def helmholtz(p, q, mesh, nf=0):
     return reduce(inner, f + [it])*dx
 
 
-def poissonS(p, q, mesh, nf=0):
+def poissonS(p, q, mesh, nf=0, prec=None):
     V = FunctionSpace(mesh, "CG", p)
     P = FunctionSpace(mesh, "CG", q)
     u = TrialFunction(V)
@@ -32,7 +32,7 @@ def poissonS(p, q, mesh, nf=0):
     return reduce(inner, f + [it])*dx
 
 
-def elasticity(p, q, mesh, nf=0):
+def elasticity(p, q, mesh, nf=0, prec=None):
     V = VectorFunctionSpace(mesh, 'CG', p)
     P = FunctionSpace(mesh, 'CG', q)
     u = TrialFunction(V)
@@ -43,7 +43,7 @@ def elasticity(p, q, mesh, nf=0):
     return reduce(inner, f + [it])*dx
 
 
-def hyperelasticity(p, q, mesh, nf=0):
+def hyperelasticity(p, q, mesh, nf=0, prec=None):
     V = VectorFunctionSpace(mesh, 'CG', p)
     P = VectorFunctionSpace(mesh, 'CG', q)
     v = TestFunction(V)
@@ -69,7 +69,7 @@ def hyperelasticity(p, q, mesh, nf=0):
     return derivative(reduce(inner, list(map(div, f)) + [it])*dx, u, du)
 
 
-def laplacian(p, q, mesh, nf=0):
+def laplacian(p, q, mesh, nf=0, prec=None):
     V = VectorFunctionSpace(mesh, 'CG', p)
     P = VectorFunctionSpace(mesh, 'CG', q)
     u = TrialFunction(V)
@@ -79,7 +79,7 @@ def laplacian(p, q, mesh, nf=0):
     return reduce(inner, f + [it])*dx
 
 
-def mixed_poisson(p, q, mesh, nf=0):
+def mixed_poisson(p, q, mesh, nf=0, prec=None):
     BDM = FunctionSpace(mesh, "BDM", p)
     DG = FunctionSpace(mesh, "DG", p - 1)
     P = FunctionSpace(mesh, 'CG', q)
@@ -90,7 +90,7 @@ def mixed_poisson(p, q, mesh, nf=0):
     f = [Function(P).assign(1.0) for _ in range(nf)]
     return reduce(inner, f + [it])*dx
 
-def holzapfel(p, q, mesh, nf=0):
+def holzapfel(p, q, mesh, nf=0, prec=None):
     assert nf == 0
 
     lamda = Constant(1000.)
@@ -166,7 +166,7 @@ def holzapfel(p, q, mesh, nf=0):
     # return derivative(reduce(inner, iter + list(map(div, f)))*dx, u)
 
 
-def _inner_schur(a):
+def _inner_schur(a, prec=None):
     # Using Slate expressions only
     _O = Tensor(a)
     O = _O.blocks
@@ -174,12 +174,14 @@ def _inner_schur(a):
     # split mixed matrix in blocks
     A00, A01, A10, A11  = O[0, 0], O[0, 1], O[1, 0], O[1, 1]
     # construct inverses on A00 and inner Schur complement
-    A00_inv = A00.inverse(1e-12, 1e-12)
-    S_inv = (A11 - A10 * A00_inv * A01).inverse(1e-12, 1e-12)
-    return A00_inv, S_inv
+    rtol = 1e-12
+    atol = 1e-70
+    prec_A00 = DiagonalTensor(A00).inverse(rtol*1e-2, atol)
+    A00_inv = (prec_A00 * A00).inverse(rtol, atol) * prec_A00 if prec else A00.inverse(rtol, atol)
+    return (A10 * A00_inv * A01)
 
 
-def _outer_schur(a, A00_inv, inner_S_inv):
+def _outer_schur(a, prec=None):
     # Using Slate expressions only
     _O = Tensor(a)
     O = _O.blocks
@@ -191,19 +193,28 @@ def _outer_schur(a, A00_inv, inner_S_inv):
     J = O[2, 2]
 
     # construct inverses on A00 and inner Schur complement
-    A00_inv = A00.inverse(1e-12, 1e-12)
-    inner_S_inv = (A11 - A10 * A00_inv * A01).inverse(1e-12, 1e-12)
+    rtol = 1e-12
+    atol = 1e-50
+    
+    prec_A00 = DiagonalTensor(A00).inverse(rtol*1e-2, atol)
+    A00_inv = (prec_A00 * A00).inverse(rtol*1e-2, atol) * prec_A00 if prec else A00.inverse(rtol*1e-2, atol)
+    
+    S = (A10 * A00_inv * A01 - A11)
+    test, trial = A11.arguments()
+    b, _ = DGLaplacian3D().form(None, test, trial)
+    prec_S = DiagonalTensor(Tensor(b)).inverse(rtol, atol)
+    inner_S_inv = ((prec_S * S).inverse(rtol, atol) * prec_S) if prec else S.inverse(rtol, atol)
     
     # build outer Schur complement
-    K_Ainv_block1 = [K0, -K0 * A00_inv * A01 + K1]
+    K_Ainv_block1 = [K0, (-K0 * A00_inv * A01 + K1)]
     K_Ainv_block2 = [K_Ainv_block1[0] * A00_inv,
                      K_Ainv_block1[1] * inner_S_inv]
-    K_Ainv_block3 = [K_Ainv_block2[0] - K_Ainv_block2[1] * A10 * A00_inv,
+    K_Ainv_block3 = [(K_Ainv_block2[0] - K_Ainv_block2[1] * A10 * A00_inv),
                      K_Ainv_block2[1]]
-    return J - K_Ainv_block3[0] * KT0 + K_Ainv_block3[1] * KT1
+    return J - (K_Ainv_block3[0] * KT0 + K_Ainv_block3[1] * KT1)
     
 
-def outer_schur(p, q, mesh, nf=0):
+def outer_schur(p, q, mesh, nf=0, prec=None):
     n = FacetNormal(mesh)
     
     if mesh.ufl_cell().is_simplex() or mesh._geometric_dimension < 3:
@@ -231,8 +242,9 @@ def outer_schur(p, q, mesh, nf=0):
     sigma, u, lambdar = TrialFunctions(W)
     tau, v, gammar = TestFunctions(W)
 
-    a = (inner(sigma, tau)*dx - inner(u, div(tau))*dx
+    a = (inner(sigma, tau)*dx + inner(u, div(tau))*dx
          + inner(div(sigma), v)*dx)
+
     if mesh.ufl_cell().is_simplex():
         a += (inner(lambdar('+'), jump(tau, n=n))*dS
               - inner(jump(sigma, n=n), gammar('+'))*dS)
@@ -242,11 +254,10 @@ def outer_schur(p, q, mesh, nf=0):
               - inner(jump(sigma, n=n), gammar('+'))*dS_h
               - inner(jump(sigma, n=n), gammar('+'))*dS_v)
 
-    A00_inv, inner_S_inv = _inner_schur(a)
-    return _outer_schur(a, A00_inv, inner_S_inv)
+    return _outer_schur(a, prec)
 
 
-def inner_schur(p, q, mesh, nf=0):
+def inner_schur(p, q, mesh, nf=0, prec=None):
     n = FacetNormal(mesh)
     
     if mesh.ufl_cell().is_simplex():
@@ -282,8 +293,9 @@ def inner_schur(p, q, mesh, nf=0):
     sigma, u, lambdar = TrialFunctions(W)
     tau, v, gammar = TestFunctions(W)
 
-    a = (inner(sigma, tau)*dx - inner(u, div(tau))*dx
+    a = (inner(sigma, tau)*dx + inner(u, div(tau))*dx
          + inner(div(sigma), v)*dx)
+
     if mesh.ufl_cell().is_simplex():
         a += (inner(lambdar('+'), jump(tau, n=n))*dS
               - inner(jump(sigma, n=n), gammar('+'))*dS)
@@ -293,5 +305,34 @@ def inner_schur(p, q, mesh, nf=0):
               - inner(jump(sigma, n=n), gammar('+'))*dS_h
               - inner(jump(sigma, n=n), gammar('+'))*dS_v)
 
-    _, inner_S_inv = _inner_schur(a)
-    return inner_S_inv
+    return _inner_schur(a, prec)
+
+class DGLaplacian3D(AuxiliaryOperatorPC):
+    def form(self, pc, u, v):
+        W = u.function_space()
+        n = FacetNormal(W.mesh())
+        alpha = Constant(200)
+        gamma = Constant(400)
+        h = CellVolume(W.mesh())/FacetArea(W.mesh())
+        h_avg = (h('+') + h('-'))/2
+
+        a_dg = (dot(grad(v), grad(u))*dx(degree=8)
+                 - dot(grad(v), (u)*n)*ds_v(degree=8)
+                 - dot(v*n, grad(u))*ds_v(degree=8)
+                 + gamma/h*dot(v, u)*ds_v(degree=8)
+                 - dot(grad(v), (u)*n)*ds_t(degree=8)
+                 - dot(v*n, grad(u))*ds_t(degree=8)
+                 + gamma/h*dot(v, u)*ds_t(degree=8)
+                 - dot(grad(v), (u)*n)*ds_b(degree=8)
+                 - dot(v*n, grad(u))*ds_b(degree=8)
+                 + gamma/h*dot(v, u)*ds_b(degree=8)
+                 - inner(jump(u, n), avg(grad(v)))*dS_v(degree=8)
+                 - inner(avg(grad(u)), jump(v, n), )*dS_v(degree=8)
+                 + alpha/h_avg * inner(jump(u, n), jump(v, n))*dS_v(degree=8)
+                 - inner(jump(u, n), avg(grad(v)))*dS_h(degree=8)
+                 - inner(avg(grad(u)), jump(v, n), )*dS_h(degree=8)
+                 + alpha/h_avg * inner(jump(u, n), jump(v, n))*dS_h(degree=8))
+
+        bcs = []
+        return (a_dg, bcs)
+
