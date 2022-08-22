@@ -100,12 +100,15 @@ elif mesh == "tet":
 else:
     raise AssertionError()
 
-if "inner_schur" in form:
-    knl_name = "slate_loopy_knl_0" if optimise and matfree else "wrap_slate_loopy_knl_0"
-elif "outer_schur" in form:
-    knl_name = "slate_loopy_knl_0" if optimise and matfree else "wrap_slate_loopy_knl_0" if optimise else "wrap_slate_loopy_knl_0"
+if runtype == "slatevectorization"
+    knl_name = "slate_wrapper"
 else:
-    knl_name = "form0_cell_integral_otherwise"
+    if "inner_schur" in form:
+        knl_name = "slate_loopy_knl_0" if optimise and matfree else "wrap_slate_loopy_knl_0"
+    elif "outer_schur" in form:
+        knl_name = "slate_loopy_knl_0" if optimise and matfree else "wrap_slate_loopy_knl_0" if optimise else "wrap_slate_loopy_knl_0"
+    else:
+        knl_name = "form0_cell_integral_otherwise"
 
 fs = [0]
 repeat = 5
@@ -125,7 +128,7 @@ for p in ps:
         cmd = ["mpiexec", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
                "python", "oneform.py", "--n", str(n), "--p", str(p), "--f", str(f),
                "--form", form, "--mesh", mesh, "--repeat", str(repeat),
-               optimise, matfree, prec, "--name", knl_name]
+               optimise, matfree, prec, "--name", knl_name, "--runtype", runtype]
         cmd.append("-log_view")
 
         output = subprocess.run(cmd, stdout=subprocess.PIPE).stdout.decode("utf-8")

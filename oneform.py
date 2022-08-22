@@ -22,6 +22,7 @@ parser.add_argument('--optimise', dest='optimise', default=False, action="store_
 parser.add_argument('--matfree', dest='matfree', default=False, action="store_true")
 parser.add_argument('--prec', dest='prec', default=False, action="store_true")
 parser.add_argument('--name', dest='knl_name', default='slate_wrapper', type=str)
+parser.add_argument('--runtype', dest='runtype', default='vectorization', type=str)
 args, _ = parser.parse_known_args()
 
 n = args.n
@@ -34,16 +35,17 @@ optimise = args.optimise
 matfree = args.matfree
 prec = args.prec
 knl_name = args.knl_name
+runtype = args.runtype
 
 if m == "quad":
     mesh = IntervalMesh(n, n)
-    mesh = ExtrudedMesh(mesh, n, layer_height=1)
+    mesh = ExtrudedMesh(mesh, n, layer_height=1.0)
     # mesh = SquareMesh(n, n, L=n, quadrilateral=True)
 elif m == "tet":
     mesh = CubeMesh(n, n, n, L=n)
 elif m == "hex":
     mesh = SquareMesh(n, n, L=n, quadrilateral=True)
-    mesh = ExtrudedMesh(mesh, n, layer_height=1)
+    mesh = ExtrudedMesh(mesh, n, layer_height=1.0)
 else:
     assert m == "tri"
     mesh = SquareMesh(n, n, L=n)
@@ -52,11 +54,12 @@ if form_str in ["mass", "helmholtz"]:
     V = FunctionSpace(mesh, "CG", p)
 elif form_str in ["laplacian", "elasticity", "hyperelasticity", "holzapfel"]:
     V = VectorFunctionSpace(mesh, "CG", p)
-
 elif "inner_schur" in form_str:
-    V = FunctionSpace(mesh, "DG", p-1) if mesh.ufl_cell().is_simplex() else FunctionSpace(mesh, "DQ", p-1)
+    p -= 1
+    V = FunctionSpace(mesh, "DG", p)
 elif "outer_schur" in form_str:
-    V = FunctionSpace(mesh, "DGT", p-1)
+    p -= 1
+    V = FunctionSpace(mesh, "DGT", p)
 else:
     raise AssertionError()
 
@@ -74,14 +77,20 @@ else:
     else:
         x.interpolate(reduce(operator.add, xs))
 
-
-form = eval(form_str)(p-1, p-1, mesh, f, prec)
-if isinstance(form, TensorBase):
-    form_compiler_parameters={"slate_compiler": {"optimise": optimise, "replace_mul": matfree}}
-else:
+if runtype == "slatevectorization"
+    tsfc_form = eval(form_str)(p, p, mesh, f)
+    y_form = Tensor(action(tsfc_form, x)) + Tensor(action(tsfc_form, x)) - Tensor(action(tsfc_form, x))
+    # with the Firedrake repo as specified in README
+    # this should by default be with unoptimised Slate expression
     form_compiler_parameters={}
+else:
+    form = eval(form_str)(p, p, mesh, f, prec)
+    if isinstance(form, TensorBase):
+        form_compiler_parameters={"slate_compiler": {"optimise": optimise, "replace_mul": matfree}}
+    else:
+        form_compiler_parameters={}
+    y_form = action(form, x)
 
-y_form = action(form, x)
 y = Function(V)
 for i in range(repeat):
    assemble(y_form, tensor=y, form_compiler_parameters=form_compiler_parameters)
@@ -103,7 +112,7 @@ if rank == 0:
     print("CELLS= {0}".format(cells))
     print("DOFS= {0}".format(dofs))
 
-    if isinstance(y_form, TensorBase):
+    if "matfree" in runtype:
         tunit = compile_expression(y_form, coffee=False, compiler_parameters=form_compiler_parameters)[0].kinfo.kernel.code
         knl_name, = tuple(filter(lambda name: name.startswith("slate_loopy_knl"), tunit.callables_table.keys()))
     else:
