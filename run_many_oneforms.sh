@@ -1,7 +1,6 @@
 #!/bin/bash
 arch='haswell-on-pex'
 hyperthreading=1
-compiler=('gcc')
 if [ $arch == "haswell" ]
 then
     batchsize=(1 4)  # 1: not vectorize, 4: vectorize by 4
@@ -15,7 +14,7 @@ then
     fi
 elif [ $arch == "haswell-on-pex" ]
 then
-    batchsize=(1)  # 1: not vectorize, 4: vectorize by 4
+    batchsize=(4)  # 1: not vectorize, 4: vectorize by 4
     if [ $hyperthreading == 1 ]
     then
         export TJ_NP=32  # number of processes
@@ -35,10 +34,31 @@ else
         export TJ_MPI_MAP_BY="core"
     fi
 fi
-mesh=('quad')
-form=('inner_schur' 'outer_schur')
-vs=('novect')  # vectorization strategy
-opts=("NOP" "MOP" "FOP")
+
+runtype="highordermatfree"  # or "vectorization" or "matfree"
+if [ $runtype == "highordermatfree" ]
+then
+    compiler=('gcc')
+    mesh=('hex')
+    form=('inner_schur' 'outer_schur')
+    vs=('cross-element' 'novect')  # vectorization strategy
+    opts=("PFOP")  # only run for highly optimised case
+elif [ $runtype == "matfree" ]
+then
+    compiler=('gcc')
+    mesh=('hex')
+    form=('inner_schur' 'outer_schur')
+    vs=('cross-element' 'novect')  # vectorization strategy
+    opts=("NOP" "MOP" "FOP" "PFOP")  # no opts, resorting, matfree, preconditoned matfree
+elif [ $runtype == "slatevectorization" ]
+then
+    # TODO
+    pass
+elif [ $runtype == "vectorization" ]
+then
+    # TODO
+    pass
+fi
 export PYOP2_EXTRA_INFO=1  # switch on timing mode
 
 for v in ${vs[@]}
@@ -59,9 +79,19 @@ do
                         export PYOP2_SIMD_WIDTH=$bs
                         if [ $v == 'novect' ]
                         then
+			    batchsize=1
                             export PYOP2_VECT_STRATEGY=""
                         else
                             export PYOP2_VECT_STRATEGY=$v
+			    # for the schur complement runs
+			    # produce vectorised results only
+			    # for highly optimised cased
+			    if [ ($runtype != 'vectorization' and \
+				  $runtype != 'slatevectorization') and \
+				  $op != 'PFOP' ]
+			    then
+				break
+			    fi
                         fi
                         #export PYOP2_CC=$comp
                         export MPICH_CC=$comp
@@ -76,8 +106,8 @@ do
                             fi
                         fi
                         firedrake-clean
-                        python run_oneforms.py --prefix "$arch"_ --suffix "_$comp"
-                        python run_oneforms.py --prefix "$arch"_ --suffix "_$comp"
+                        python run_oneforms.py --prefix "$arch"_ --suffix "_$comp" --runtype "$runtype"
+                        python run_oneforms.py --prefix "$arch"_ --suffix "_$comp" --runtype "$runtype"
                     done
                 done
             done
