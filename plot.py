@@ -5,6 +5,9 @@ import numpy as np
 import itertools
 import seaborn as sns
 
+plt.style.use("seaborn-darkgrid")
+sns.set(font_scale=1.15)
+
 table = False
 roofline = False
 throughput = True
@@ -36,18 +39,18 @@ def compute(df, platform):
     df['flop / peak'] = df['flop'] * df['cell'] / df['time'] / cpu[platform]["peak_flop"]
     df["ai"] = df["flop"] * df["cell"] / df["byte"]
     df["time / cell"] = df["time"] / df["cell"]
-    df["dof / time"] = df["dof"] / df["time"]
-    df = df[:6]
+    df["DOF / time [s]"] = df["dof"] / df["time"]
     return df
 
 if throughput:
     # forms by meshes
     plt.close('all')
-    plt.figure(figsize=(8, 10))
+    plt.figure(figsize=(10, 5))
 
-    forms = ["inner_schur"]
+    forms = ["outer_schur"]
     meshes = ["hex"]
-    opts = [(False, False), (True, False), (True, True)]
+    opts = [(True, True, True)]
+    names = ["preconditioned matfree", "vectorised preconditioned matfree"]
     platform = "haswell-on-pex"
     hyperthreading = True
     vec = "cross-element"
@@ -71,9 +74,9 @@ if throughput:
         simd = "8"
         threads = "32" if hyperthreading else "16"
         
-    compilers = ["gcc", "clang"]
+    compilers = ["gcc"] #, "clang"]
     x = "p"
-    y = "flop / peak"
+    y = "DOF / time [s]"
     # linpack_scale = cpu[platform]['peak_flop'] / cpu[platform]['peak_flop_linpack']
 
     palette = sns.color_palette(n_colors=5)
@@ -81,25 +84,22 @@ if throughput:
     for form_id, form in enumerate(forms):
         for mesh_id, mesh in enumerate(meshes):
             dfs = []
-            filename = "_".join([platform, form+"_matfslateexpr", mesh, threads, "1", "", "gcc", "optimiseFalse", "matfreeFalse"]) + ".csv"
+            filename = "_".join([platform, form+"_homatfslateexpr", mesh, threads, "4", "cross-element", "gcc", "optimiseTrue", "matfreeTrue", "precTrue"]) + ".csv"
             base_df = pd.read_csv("./csv/" + filename)
             base_df = compute(base_df, platform)
-            names = []
             for compiler in compilers:
-                for opt in opts[1:]:
-                    filename = "_".join([platform, form+"_matfslateexpr", mesh, threads, "1", "", compiler, f"optimise{opt[0]}", f"matfree{opt[1]}"]) + ".csv"
+                for opt in opts:
+                    filename = "_".join([platform, form+"_homatfslateexpr", mesh, threads, "4", "", compiler, f"optimise{opt[0]}", f"matfree{opt[1]}", f"prec{opt[2]}"]) + ".csv"
                     df = pd.read_csv("./csv/" + filename)
                     df = compute(df, platform)
                     df["speed up"] = base_df["time"] / df["time"]
                     dfs.append(df)
-                    names.append(f"{compiler}+_{opt[0]}+_{opt[1]}")
             
             dfs.append(base_df)
             ax1 = plt.subplot(len(forms), len(meshes), mesh_id + form_id*len(meshes) + 1)
             marker = itertools.cycle(('o', 's', '*', '^', "D"))
             color = itertools.cycle((palette[0], palette[3], palette[1], palette[2], palette[4]))
-            linestyle = itertools.cycle(('-', '--', '-.', ':', 'dotted'))
-            names = names + ["baseline"]
+            linestyle = itertools.cycle(('dotted', '--', '-.', '-', (0, (3, 1, 1, 1, 1, 1))))
             plots = []
             for df, n in zip(dfs, names):
                 print(df[y])
@@ -111,7 +111,7 @@ if throughput:
             ax1.set_xticks(dfs[0][x])
             # ax1.set_ylim(bottom=0, top=1.0)
             # ax1.set_yticks([0.25, 0.5, 0.75, 1.0])
-            ax1.set_title(form + " - " + mesh)
+            #ax1.set_title(form + " - " + mesh)
             # plot = ax1.hlines(cpu[platform]["peak_flop_linpack"]/cpu[platform]["peak_flop"], 1, 6, 
             #                    color="grey", linestyle=":")
             
@@ -122,7 +122,7 @@ if throughput:
             #     plots.append(plot)
             
             if mesh_id == 0:
-                ax1.set_ylabel("FLOP/s / Peak FLOP/s")
+                ax1.set_ylabel(y, weight="bold", labelpad=10)
             else:
                 plt.setp(ax1.get_yticklabels(), visible=False)
             
@@ -132,16 +132,19 @@ if throughput:
             #     plt.setp(ax2.get_yticklabels(), visible=False)
                 
             if form_id == len(forms) - 1:
-                ax1.set_xlabel("Polynomial degree")
+                ax1.set_xlabel("Polynomial degree\n [DOFS]", weight="bold", labelpad=10)
+                ax1.set_xticklabels(list(f"{degree}\n[{dof}]" for degree, dof in zip(dfs[0][x], dfs[0]["dof"])))
             else:
                 plt.setp(ax1.get_xticklabels(), visible=False)
 
     plt.figlegend(plots, names, ncol=5,
-                loc = "center", bbox_to_anchor=[0.5, 0.04], frameon=True)
-
+                loc = "center", bbox_to_anchor=[0.5, 0.04], frameon=True,
+                facecolor='white', fancybox=True)
+    ax1.set_yscale('log')
+    plt.grid(True, which="both", color='white')
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.15)
-    plt.savefig("plots/slate/matf-tsslac-"+platform + "-" + vec + ".pdf", format="pdf")
+    plt.subplots_adjust(bottom=0.3)
+    plt.savefig("plots/slate/ho-matf-tsslac-"+platform + "-" + vec + ".pdf", format="pdf")
 
 
     # roofline
@@ -235,9 +238,9 @@ if throughput:
             ax.set_ylabel("GFLOPS / s")
             ax.set_xlabel("Arithmetic intensity")
 
-        plt.subplots_adjust(bottom=0.3)
         lgd = plt.figlegend(plots, names, ncol=5, 
                             loc = "center", bbox_to_anchor=[0.5, 0.1], frameon=False)
+        plt.subplots_adjust(bottom=0.5)
         # plt.figlegend(linpack, ["LINPACK"], loc = "center", bbox_to_anchor=[0.7, 0.1], frameon=False)
         plt.savefig("plots/slate/"+"matf-tsslac-roofline-" + platform + ".pdf", format="pdf", bbox_extra_artists=(lgd,), bbox_inches='tight')
 
