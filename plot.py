@@ -5,13 +5,6 @@ import numpy as np
 import itertools
 import seaborn as sns
 
-plt.style.use("seaborn-darkgrid")
-sns.set(font_scale=1.15)
-
-table = False
-roofline = False
-throughput = True
-
 # ### Plot
 # Peak performance
 cpu = {}
@@ -39,283 +32,277 @@ def compute(df, platform):
     df['flop / peak'] = df['flop'] * df['cell'] / df['time'] / cpu[platform]["peak_flop"]
     df["ai"] = df["flop"] * df["cell"] / df["byte"]
     df["time / cell"] = df["time"] / df["cell"]
-    df["DOF / time [s]"] = df["dof"] / df["time"]
+    df["time / dof"] = df["time"] / df["dof"]
+    df = df[:6]
     return df
 
-if throughput:
-    # forms by meshes
-    plt.close('all')
-    plt.figure(figsize=(10, 5))
 
-    forms = ["outer_schur"]
-    meshes = ["hex"]
-    opts = [(True, True, True)]
-    names = ["preconditioned matfree", "vectorised preconditioned matfree"]
-    platform = "haswell-on-pex"
-    hyperthreading = True
-    vec = "cross-element"
+# forms by meshes
+plt.close('all')
+plt.figure(figsize=(8, 10))
 
-    if platform == "haswell":
-        simd = "4"
-        if hyperthreading:
-            threads = "16"
-        else:
-            threads = "8"
-    elif platform == "mymac":
-        simd = "4"
+forms = ["mass", "helmholtz", "laplacian", "elasticity", "hyperelasticity"]
+meshes = ["tri", "quad", "tet", "hex"]
+platform = "haswell-on-pex"
+hyperthreading = True
+vec = "cross-element"
+
+if platform == "haswell":
+    simd = "4"
+    if hyperthreading:
         threads = "16"
-    elif platform == "haswell-on-pex":
-        simd = "4"
-        if hyperthreading:
-            threads = "32"
-        else:
-            threads = "16"
     else:
-        simd = "8"
-        threads = "32" if hyperthreading else "16"
+        threads = "8"
+elif platform == "mymac":
+    simd = "4"
+    threads = "16"
+elif platform == "haswell-on-pex":
+    simd = "4"
+    if hyperthreading:
+        threads = "32"
+    else:
+        threads = "16"
+else:
+    simd = "8"
+    threads = "32" if hyperthreading else "16"
+    
+compilers = ["gcc", "clang"]
+x = "p"
+y = "flop / peak"
+# linpack_scale = cpu[platform]['peak_flop'] / cpu[platform]['peak_flop_linpack']
+
+palette = sns.color_palette(n_colors=4)
+
+for form_id, form in enumerate(forms):
+    for mesh_id, mesh in enumerate(meshes):
+        dfs = []
+        filename = "_".join([platform, form+"_slateexpr", mesh, threads, "1", vec, "gcc"]) + ".csv"
+        base_df = pd.read_csv("./csv/" + filename)
+        base_df = compute(base_df, platform)
+        for compiler in compilers:
+            filename = "_".join([platform, form+"_slateexpr", mesh, threads, simd, vec, compiler]) + ".csv"
+            df = pd.read_csv("./csv/" + filename)
+            df = compute(df, platform)
+            df["speed up"] = base_df["time"] / df["time"]
+            dfs.append(df)
         
-    compilers = ["gcc"] #, "clang"]
-    x = "p"
-    y = "DOF / time [s]"
-    # linpack_scale = cpu[platform]['peak_flop'] / cpu[platform]['peak_flop_linpack']
-
-    palette = sns.color_palette(n_colors=5)
-
-    for form_id, form in enumerate(forms):
-        for mesh_id, mesh in enumerate(meshes):
-            dfs = []
-            filename = "_".join([platform, form+"_homatfslateexpr", mesh, threads, "4", "cross-element", "gcc", "optimiseTrue", "matfreeTrue", "precTrue"]) + ".csv"
-            base_df = pd.read_csv("./csv/" + filename)
-            base_df = compute(base_df, platform)
-            for compiler in compilers:
-                for opt in opts:
-                    filename = "_".join([platform, form+"_homatfslateexpr", mesh, threads, "4", "", compiler, f"optimise{opt[0]}", f"matfree{opt[1]}", f"prec{opt[2]}"]) + ".csv"
-                    df = pd.read_csv("./csv/" + filename)
-                    df = compute(df, platform)
-                    df["speed up"] = base_df["time"] / df["time"]
-                    dfs.append(df)
-            
-            dfs.append(base_df)
-            ax1 = plt.subplot(len(forms), len(meshes), mesh_id + form_id*len(meshes) + 1)
-            marker = itertools.cycle(('o', 's', '*', '^', "D"))
-            color = itertools.cycle((palette[0], palette[3], palette[1], palette[2], palette[4]))
-            linestyle = itertools.cycle(('dotted', '--', '-.', '-', (0, (3, 1, 1, 1, 1, 1))))
-            plots = []
-            for df, n in zip(dfs, names):
-                print(df[y])
-                plot, = ax1.plot(df[x], df[y], marker=next(marker), color=next(color), linestyle=next(linestyle),
-                                label=n, linewidth=2, markersize=5)
-                if form_id == len(forms) - 1 and mesh_id == len(meshes) - 1:
-                    plots.append(plot)
-
-            ax1.set_xticks(dfs[0][x])
-            # ax1.set_ylim(bottom=0, top=1.0)
-            # ax1.set_yticks([0.25, 0.5, 0.75, 1.0])
-            #ax1.set_title(form + " - " + mesh)
-            # plot = ax1.hlines(cpu[platform]["peak_flop_linpack"]/cpu[platform]["peak_flop"], 1, 6, 
-            #                    color="grey", linestyle=":")
-            
-            # ax2 = ax1.twinx()
-            # ax2.set_ylim(bottom=0, top=linpack_scale)
-            # ax2.set_yticks([0.25, 0.5, 0.75, 1])
-            # if form_id == len(forms) - 1 and mesh_id == len(meshes) - 1:
-            #     plots.append(plot)
-            
-            if mesh_id == 0:
-                ax1.set_ylabel(y, weight="bold", labelpad=10)
-            else:
-                plt.setp(ax1.get_yticklabels(), visible=False)
-            
-            # if mesh_id == len(meshes) - 1:
-            #     ax2.set_ylabel("FLOP/s / LINPACK FLOP/s")
-            # else:
-            #     plt.setp(ax2.get_yticklabels(), visible=False)
-                
-            if form_id == len(forms) - 1:
-                ax1.set_xlabel("Polynomial degree\n [DOFS]", weight="bold", labelpad=10)
-                ax1.set_xticklabels(list(f"{degree}\n[{dof}]" for degree, dof in zip(dfs[0][x], dfs[0]["dof"])))
-            else:
-                plt.setp(ax1.get_xticklabels(), visible=False)
-
-    plt.figlegend(plots, names, ncol=5,
-                loc = "center", bbox_to_anchor=[0.5, 0.04], frameon=True,
-                facecolor='white', fancybox=True)
-    ax1.set_yscale('log')
-    plt.grid(True, which="both", color='white')
-    plt.tight_layout()
-    plt.subplots_adjust(bottom=0.3)
-    plt.savefig("plots/slate/ho-matf-tsslac-"+platform + "-" + vec + ".pdf", format="pdf")
-
-
-    # roofline
-    if roofline:
-        plt.close('all')
-        plt.figure(figsize=(10, 5))
-
-        platform = "haswell-on-pex"  # haswell or skylake
-        forms = ["mass", "helmholtz", "laplacian", "elasticity", "hyperelasticity"]
-        meshes = ["tri", "quad", "tet", "hex"]
-        compiler = "gcc"
-        vec = "cross-element"
-
-        setting = {
-            "haswell": {
-                "simds": ["1", "4"],
-                "proc": "16",
-                "yticks": [5, 10, 20, 50, 100, 200, 300, 500],
-                "ytop": 500,
-                "ybottom": 3,
-                "xleft": 0.1,
-            },
-            "skylake": {
-                "simds": ["1",  "8"],
-                "proc": "32",
-                "yticks": [10, 20, 50, 100, 200, 500, 1000, 2000],
-                "ytop": 2000,
-                "ybottom": 10,
-                "xleft": 0.15,
-            },
-            "mymac": {
-                "simds": ["4"],
-                "proc": "4",
-                "yticks": [1, 10, 20, 50, 100, 200, 500, 1000, 2000],
-                "ytop": 2000,
-                "ybottom": 1,
-                "xleft": 0.15,
-            },
-            "haswell-on-pex": {
-                "simds": ["1", "4"],
-                "proc": "32" if hyperthreading else "16",
-                "yticks": [2, 5, 10, 20, 50, 100, 200, 300, 500, 1000],
-                "ytop": 1000,
-            "ybottom": 1,
-            "xleft": 0.1,
-            },
-        }
-
-        x = "ai"
-        y = "flop / s"
-        xmax = 10000
-
+        dfs.append(base_df)
+        ax1 = plt.subplot(len(forms), len(meshes), mesh_id + form_id*len(meshes) + 1)
+        marker = itertools.cycle(('o', 's', '*', '^'))
+        color = itertools.cycle((palette[0], palette[3], palette[1]))
+        linestyle = itertools.cycle(('-', '--', '-.', ':',))
+        names = compilers + ["baseline"]
         plots = []
+        for df, n in zip(dfs, names):
+            plot, = ax1.plot(df[x], df[y], marker=next(marker), color=next(color), linestyle=next(linestyle),
+                            label=n, linewidth=2, markersize=5)
+            if form_id == len(forms) - 1 and mesh_id == len(meshes) - 1:
+                plots.append(plot)
 
-        for idx, simd in enumerate(setting[platform]["simds"]):
-            ax = plt.subplot(1, 2, idx+1)
-            ax.set_xscale("log")
-            ax.set_yscale("log")
-            ax.set_yticks(setting[platform]["yticks"])
-            ax.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+        ax1.set_xticks(dfs[0][x])
+        ax1.set_ylim(bottom=0, top=1.0)
+        ax1.set_yticks([0.25, 0.5, 0.75, 1.0])
+        ax1.set_title(form + " - " + mesh)
+        # plot = ax1.hlines(cpu[platform]["peak_flop_linpack"]/cpu[platform]["peak_flop"], 1, 6, 
+        #                    color="grey", linestyle=":")
+        
+        # ax2 = ax1.twinx()
+        # ax2.set_ylim(bottom=0, top=linpack_scale)
+        # ax2.set_yticks([0.25, 0.5, 0.75, 1])
+        # if form_id == len(forms) - 1 and mesh_id == len(meshes) - 1:
+        #     plots.append(plot)
+        
+        if mesh_id == 0:
+            ax1.set_ylabel("FLOP/s / Peak FLOP/s")
+        else:
+            plt.setp(ax1.get_yticklabels(), visible=False)
+        
+        # if mesh_id == len(meshes) - 1:
+        #     ax2.set_ylabel("FLOP/s / LINPACK FLOP/s")
+        # else:
+        #     plt.setp(ax2.get_yticklabels(), visible=False)
+            
+        if form_id == len(forms) - 1:
+            ax1.set_xlabel("Polynomial degree")
+        else:
+            plt.setp(ax1.get_xticklabels(), visible=False)
 
-            rate = cpu[platform]['peak_bw'] / 1e9
-            plot, = ax.plot([0.1, cpu[platform]['peak_flop']/1e9/rate, xmax],
-                            [rate*0.1, cpu[platform]['peak_flop']/1e9, cpu[platform]['peak_flop']/1e9], linewidth=2,
-                            color='grey')
-            # plot, = ax.plot([cpu[platform]['peak_flop_linpack']/1e9/rate, 3000],
-            #                 [cpu[platform]['peak_flop_linpack']/1e9, cpu[platform]['peak_flop_linpack']/1e9],
-            #                linestyle=':', color='grey')
+plt.figlegend(plots, ["GCC", "clang", "baseline"], ncol=5,
+              loc = "center", bbox_to_anchor=[0.5, 0.04], frameon=True)
+
+plt.tight_layout()
+plt.subplots_adjust(bottom=0.15)
+plt.savefig("plots/slate/tsslac-"+platform + "-" + vec + ".pdf", format="pdf")
+
+
+# roofline
+plt.close('all')
+plt.figure(figsize=(10, 5))
+
+platform = "haswell-on-pex"  # haswell or skylake
+forms = ["mass", "helmholtz", "laplacian", "elasticity", "hyperelasticity"]
+meshes = ["tri", "quad", "tet", "hex"]
+compiler = "gcc"
+vec = "cross-element"
+
+setting = {
+    "haswell": {
+        "simds": ["1", "4"],
+        "proc": "16",
+        "yticks": [5, 10, 20, 50, 100, 200, 300, 500],
+        "ytop": 500,
+        "ybottom": 3,
+        "xleft": 0.1,
+    },
+    "skylake": {
+        "simds": ["1",  "8"],
+        "proc": "32",
+        "yticks": [10, 20, 50, 100, 200, 500, 1000, 2000],
+        "ytop": 2000,
+        "ybottom": 10,
+        "xleft": 0.15,
+    },
+    "mymac": {
+        "simds": ["4"],
+        "proc": "4",
+        "yticks": [1, 10, 20, 50, 100, 200, 500, 1000, 2000],
+        "ytop": 2000,
+        "ybottom": 1,
+        "xleft": 0.15,
+    },
+    "haswell-on-pex": {
+        "simds": ["1", "4"],
+        "proc": "32" if hyperthreading else "16",
+        "yticks": [2, 5, 10, 20, 50, 100, 200, 300, 500, 1000],
+        "ytop": 1000,
+    "ybottom": 1,
+    "xleft": 0.1,
+    },
+}
+
+x = "ai"
+y = "flop / s"
+xmax = 10000
+
+plots = []
+
+for idx, simd in enumerate(setting[platform]["simds"]):
+    ax = plt.subplot(1, 2, idx+1)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_yticks(setting[platform]["yticks"])
+    ax.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+
+    rate = cpu[platform]['peak_bw'] / 1e9
+    plot, = ax.plot([0.1, cpu[platform]['peak_flop']/1e9/rate, xmax],
+                    [rate*0.1, cpu[platform]['peak_flop']/1e9, cpu[platform]['peak_flop']/1e9], linewidth=2,
+                    color='grey')
+    # plot, = ax.plot([cpu[platform]['peak_flop_linpack']/1e9/rate, 3000],
+    #                 [cpu[platform]['peak_flop_linpack']/1e9, cpu[platform]['peak_flop_linpack']/1e9],
+    #                linestyle=':', color='grey')
+    if idx == 1:
+        linpack = [plot]
+
+    markers = itertools.cycle(('o', 's', '*', '^', 'v'))
+    colors = itertools.cycle(palette)
+    names = []
+    for form_id, form in enumerate(forms):
+        marker = next(markers)
+        for mesh_id, mesh in enumerate(meshes):
+            color = next(colors)
+            filename = "_".join([platform, form+"_slateexpr", mesh, setting[platform]["proc"], simd, vec, compiler]) + ".csv"
+            df = pd.read_csv("./csv/" + filename)
+            df = compute(df, platform)
+            plot, = ax.plot(df[x], df[y]/1e9, label=form+" - "+mesh, markersize=7, marker=marker, color=color,
+                            linestyle='None')
+            names.append(form+" - "+mesh)
             if idx == 1:
-                linpack = [plot]
+                plots.append(plot)
 
-            markers = itertools.cycle(('o', 's', '*', '^', 'v'))
-            colors = itertools.cycle(palette)
-            names = []
-            for form_id, form in enumerate(forms):
-                marker = next(markers)
-                for mesh_id, mesh in enumerate(meshes):
-                    color = next(colors)
-                    filename = "_".join([platform, form+"_slateexpr", mesh, setting[platform]["proc"], simd, vec, compiler]) + ".csv"
-                    df = pd.read_csv("./csv/" + filename)
-                    df = compute(df, platform)
-                    plot, = ax.plot(df[x], df[y]/1e9, label=form+" - "+mesh, markersize=7, marker=marker, color=color,
-                                    linestyle='None')
-                    names.append(form+" - "+mesh)
-                    if idx == 1:
-                        plots.append(plot)
+    ax.set_ylim(bottom=setting[platform]["ybottom"], top=setting[platform]["ytop"])
+    ax.set_xlim(left=setting[platform]["xleft"], right=xmax)
+    ax.set_title(("Baseline Slate" if simd == "1" else "Cross-element vectorization Slate"))
+    ax.set_ylabel("GFLOPS / s")
+    ax.set_xlabel("Arithmetic intensity")
 
-            ax.set_ylim(bottom=setting[platform]["ybottom"], top=setting[platform]["ytop"])
-            ax.set_xlim(left=setting[platform]["xleft"], right=xmax)
-            ax.set_title(("Baseline Slate" if simd == "1" else "Cross-element vectorization Slate"))
-            ax.set_ylabel("GFLOPS / s")
-            ax.set_xlabel("Arithmetic intensity")
-
-        lgd = plt.figlegend(plots, names, ncol=5, 
-                            loc = "center", bbox_to_anchor=[0.5, 0.1], frameon=False)
-        plt.subplots_adjust(bottom=0.5)
-        # plt.figlegend(linpack, ["LINPACK"], loc = "center", bbox_to_anchor=[0.7, 0.1], frameon=False)
-        plt.savefig("plots/slate/"+"matf-tsslac-roofline-" + platform + ".pdf", format="pdf", bbox_extra_artists=(lgd,), bbox_inches='tight')
+plt.subplots_adjust(bottom=0.3)
+lgd = plt.figlegend(plots, names, ncol=5, 
+                    loc = "center", bbox_to_anchor=[0.5, 0.1], frameon=False)
+# plt.figlegend(linpack, ["LINPACK"], loc = "center", bbox_to_anchor=[0.7, 0.1], frameon=False)
+plt.savefig("plots/slate/"+"tsslac-roofline-" + platform + ".pdf", format="pdf", bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 
-if table:
-    # populate table in paper
-    forms = ["mass", "helmholtz", "laplacian", "elasticity", "hyperelasticity"]
-    meshes = ["tri", "quad", "tet", "hex"]
-    compiler = "gcc"
-    vec = "cross-element"
+# populate table in paper
+forms = ["mass", "helmholtz", "laplacian", "elasticity", "hyperelasticity"]
+meshes = ["tri", "quad", "tet", "hex"]
+compiler = "gcc"
+vec = "cross-element"
 
-    setting = {
-        "haswell": {
-            "simd":"4",
-            "proc": "16",
-        },
-        "skylake": {
-            "simd": "8",
-            "proc": "32",
-        },
-        "mymac": {
-            "simd": "4",
-            "proc": "4",
-        },
-        "haswell-on-pex": {
-            "simd":"4",
-            "proc": "32" if hyperthreading else "16"
-        },
-    }
+setting = {
+    "haswell": {
+        "simd":"4",
+        "proc": "16",
+    },
+    "skylake": {
+        "simd": "8",
+        "proc": "32",
+    },
+    "mymac": {
+        "simd": "4",
+        "proc": "4",
+    },
+    "haswell-on-pex": {
+        "simd":"4",
+        "proc": "32" if hyperthreading else "16"
+    },
+}
 
-    from collections import defaultdict
+from collections import defaultdict
 
-    result = defaultdict(dict)
-    plen = 6
-    result_s = np.zeros((len(forms)*plen, len(meshes)))
-    result_ai = np.zeros((len(forms)*plen, len(meshes)))
+result = defaultdict(dict)
+plen = 6
+result_s = np.zeros((len(forms)*plen, len(meshes)))
+result_ai = np.zeros((len(forms)*plen, len(meshes)))
 
-    for i, form in enumerate(forms):
-        for j, mesh in enumerate(meshes):
-            for platform in ["haswell-on-pex"]:
-                # baseline
-                filename = "_".join([platform, form+"_slateexpr", mesh, setting[platform]["proc"], "1", vec, compiler]) + ".csv"
-                df = pd.read_csv("./csv/" + filename)
-                df = compute(df, platform)
-                
-                filename = "_".join([platform, form+"_slateexpr", mesh, setting[platform]["proc"], setting[platform]["simd"], vec, compiler]) + ".csv"
-                df_speed = pd.read_csv("./csv/" + filename)
-                df_speed = compute(df_speed, platform)
-                df["speed up " + platform] = df["time"] / df_speed["time"]
+for i, form in enumerate(forms):
+    for j, mesh in enumerate(meshes):
+        for platform in ["haswell-on-pex"]:
+            # baseline
+            filename = "_".join([platform, form+"_slateexpr", mesh, setting[platform]["proc"], "1", vec, compiler]) + ".csv"
+            df = pd.read_csv("./csv/" + filename)
+            df = compute(df, platform)
+            
+            filename = "_".join([platform, form+"_slateexpr", mesh, setting[platform]["proc"], setting[platform]["simd"], vec, compiler]) + ".csv"
+            df_speed = pd.read_csv("./csv/" + filename)
+            df_speed = compute(df_speed, platform)
+            df["speed up " + platform] = df["time"] / df_speed["time"]
 
-                for idx, row in df.iterrows():
-                    result[(form, mesh, int(row["p"]))]['ai'] = "{0:.1f}".format(row["ai"])
-                    result[(form, mesh, int(row["p"]))]['extend_dof'] = "{0:d}".format(int(row["extend_dof"]))
-                    result[(form, mesh, int(row["p"]))]['extend_quad'] = "{0:d}".format(int(row["extend_quad"]))
-                    result[(form, mesh, int(row["p"]))]['speed up ' + platform] = "{0:.1f}".format(row["speed up " + platform])
+            for idx, row in df.iterrows():
+                result[(form, mesh, int(row["p"]))]['ai'] = "{0:.1f}".format(row["ai"])
+                result[(form, mesh, int(row["p"]))]['extend_dof'] = "{0:d}".format(int(row["extend_dof"]))
+                result[(form, mesh, int(row["p"]))]['extend_quad'] = "{0:d}".format(int(row["extend_quad"]))
+                result[(form, mesh, int(row["p"]))]['speed up ' + platform] = "{0:.1f}".format(row["speed up " + platform])
 
-                    result_s[plen*i+idx, j] = "{0:.1f}".format(row["speed up " + platform])
-                    result_ai[plen*i+idx, j] = "{0:0.1f}".format(row["ai"])
+                result_s[plen*i+idx, j] = "{0:.1f}".format(row["speed up " + platform])
+                result_ai[plen*i+idx, j] = "{0:0.1f}".format(row["ai"])
 
-    string = ""
-    for form in forms:
-        for p in range(1, 7):
-            line = ["", str(p)]
-            for mesh in meshes:
-                res = result[(form, mesh, p)]
-                line.extend([res['ai'], res['speed up haswell-on-pex']])#, res['speed up skylake']])
-            string += " & ".join(line)
-            string += "\\\\\n"
-        string += "\\hline\n"
-    print(string)
+string = ""
+for form in forms:
+    for p in range(1, 7):
+        line = ["", str(p)]
+        for mesh in meshes:
+            res = result[(form, mesh, p)]
+            line.extend([res['ai'], res['speed up haswell-on-pex']])#, res['speed up skylake']])
+        string += " & ".join(line)
+        string += "\\\\\n"
+    string += "\\hline\n"
+print(string)
 
 
-    plt.figure(figsize=(6,5))
-    ax = sns.heatmap(result_s, robust=True, annot=result_ai, fmt='g', cmap="Reds", xticklabels=meshes,
-                    yticklabels=list([f"{f} {p}" if p==3  else p for f in forms for p in range(plen) ]),
-                    cbar_kws={'label': 'speedup'})
-    plt.tight_layout()
-    plt.savefig("plots/slate/"+"matf-tsslac-flame-" + platform + ".pdf", format="pdf", bbox_inches='tight')
+plt.figure(figsize=(6,5))
+ax = sns.heatmap(result_s, robust=True, annot=result_ai, fmt='g', cmap="Reds", xticklabels=meshes,
+                 yticklabels=list([f"{f} {p}" if p==3  else p for f in forms for p in range(plen) ]),
+                 cbar_kws={'label': 'speedup'})
+plt.tight_layout()
+plt.savefig("plots/slate/"+"tsslac-flame-" + platform + ".pdf", format="pdf", bbox_inches='tight')
+
