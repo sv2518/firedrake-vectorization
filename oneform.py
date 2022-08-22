@@ -20,6 +20,7 @@ parser.add_argument('--mesh', dest='m', default="tri", type=str, choices=["quad"
 parser.add_argument('--print', default=False, action="store_true")
 parser.add_argument('--optimise', dest='optimise', default=False, action="store_true")
 parser.add_argument('--matfree', dest='matfree', default=False, action="store_true")
+parser.add_argument('--prec', dest='prec', default=False, action="store_true")
 parser.add_argument('--name', dest='knl_name', default='slate_wrapper', type=str)
 args, _ = parser.parse_known_args()
 
@@ -31,17 +32,18 @@ m = args.m
 form_str = args.form
 optimise = args.optimise
 matfree = args.matfree
+prec = args.prec
 knl_name = args.knl_name
 
 if m == "quad":
     mesh = IntervalMesh(n, n)
-    mesh = ExtrudedMesh(mesh, n)
+    mesh = ExtrudedMesh(mesh, n, layer_height=1)
     # mesh = SquareMesh(n, n, L=n, quadrilateral=True)
 elif m == "tet":
     mesh = CubeMesh(n, n, n, L=n)
 elif m == "hex":
-    mesh = SquareMesh(n, n, L=1, quadrilateral=True)
-    mesh = ExtrudedMesh(mesh, n)
+    mesh = SquareMesh(n, n, L=n, quadrilateral=True)
+    mesh = ExtrudedMesh(mesh, n, layer_height=1)
 else:
     assert m == "tri"
     mesh = SquareMesh(n, n, L=n)
@@ -73,7 +75,7 @@ else:
         x.interpolate(reduce(operator.add, xs))
 
 
-form = eval(form_str)(p-1, p-1, mesh, f)
+form = eval(form_str)(p-1, p-1, mesh, f, prec)
 if isinstance(form, TensorBase):
     form_compiler_parameters={"slate_compiler": {"optimise": optimise, "replace_mul": matfree}}
 else:
