@@ -14,10 +14,10 @@ suffix = args.suffix
 runtype = args.runtype
 
 
-def get_n(mesh, p, form):
+def get_n(mesh, p, form, runtype):
     if mesh == "hex":
         if form == "inner_schur":
-            return 32
+            return 16 if "highorder" in runtype else 32
         elif form == "outer_schur":
             return 16
         else:
@@ -122,7 +122,7 @@ print("form={0}, mesh={1}, simd={2}, np={3}, {4}, {5}".format(form, mesh, simd_w
 result = [("n", "p", "f", "dof", "cell", "add", "sub", "mul", "div", "mem", "byte", "time", "ninst", "nloops", "extend_dof", "extend_quad")]
 for p in ps:
     for f in fs:
-        n = get_n(mesh, p, form)
+        n = get_n(mesh, p, form, runtype)
         print("n={0}, p={1}, f={2}".format(n, p, f))
         print(f"opts={optimise}{matfree}{prec}")
         cmd = ["mpiexec", "-np", np, "--bind-to", "hwthread", "--map-by", mpi_map_by,
