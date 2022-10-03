@@ -82,12 +82,12 @@ except:
     pass
 
 if mesh == "hex":
-    if runtype == "highordermatf"
-        if form == "inner_schur"
+    if runtype == "highordermatfree":
+        if form == "inner_schur":
             ps = range(1, 10)
         else:
             ps = range(1, 8)
-    elif runtype == "matf":
+    elif runtype == "matfree":
         ps = range(1, 6)
     else:
         ps = range(1, 7)
@@ -100,7 +100,7 @@ elif mesh == "tet":
 else:
     raise AssertionError()
 
-if runtype == "slatevectorization"
+if runtype == "slatevectorization":
     knl_name = "slate_wrapper"
 else:
     if "inner_schur" in form:
@@ -157,12 +157,12 @@ for p in ps:
 
 if runtype == "highordermatfree":
     name = "homatfslateexpr"
-    suffix += "_optimise{1}_matfree{2}_prec{3}".format(bool(optimise), bool(matfree), bool(prec))
+    suffix += "_optimise{10_matfree{1}_prec{2}".format(bool(optimise), bool(matfree), bool(prec))
 elif runtype == "matfree":
-    name == "matfslateexpr"
-    suffix += "_optimise{1}_matfree{2}_prec{3}".format(bool(optimise), bool(matfree), bool(prec))
+    name = "matfslateexpr"
+    suffix += "_optimise{0}_matfree{1}_prec{2}".format(bool(optimise), bool(matfree), bool(prec))
 elif runtype == "slatevectorization":
-    name == "slateexpr"
+    name = "slateexpr"
     if simd_width == 1:
         # naming convention changed between runs
         vect_strategy == "cross-element"
