@@ -3,7 +3,7 @@ arch='haswell-on-pex'
 hyperthreading=1
 if [ $arch == "haswell" ]
 then
-    batchsize=(1 4)  # 1: not vectorize, 4: vectorize by 4
+    batchsize=(4)  # if vectorised else 
     if [ $hyperthreading == 1 ]
     then
         export TJ_NP=16  # number of processes
@@ -14,7 +14,8 @@ then
     fi
 elif [ $arch == "haswell-on-pex" ]
 then
-    batchsize=(4)  # 1: not vectorize, 4: vectorize by 4
+    # note that haswell on pex is a dual-socket machine
+    batchsize=(4)  # if vectorised else 
     if [ $hyperthreading == 1 ]
     then
         export TJ_NP=32  # number of processes
@@ -24,7 +25,7 @@ then
         export TJ_MPI_MAP_BY="core"
     fi
 else
-    batchsize=(1 8)
+    batchsize=(8)  # if vectorised else 
     if [ $hyperthreading == 1 ]
     then
         export TJ_NP=32
@@ -52,12 +53,18 @@ then
     opts=("NOP" "MOP" "FOP" "PFOP")  # no opts, resorting, matfree, preconditoned matfree
 elif [ $runtype == "slatevectorization" ]
 then
-    # TODO
-    pass
+    compiler=('gcc' 'clang')
+    mesh=('quad' 'tri' 'hex' 'tet')
+    form=('mass' 'helmholtz' 'laplacian' 'elasticity' 'hyperelasticity')
+    vs=('cross-element' 'novect')  # vectorization strategy
+    opts=("NOP")  # no opts
 elif [ $runtype == "vectorization" ]
 then
-    # TODO
-    pass
+    compiler=('gcc' 'clang')
+    mesh=('quad' 'tri' 'hex' 'tet')
+    form=('mass' 'helmholtz' 'laplacian' 'elasticity' 'hyperelasticity')
+    vs=('cross-element' 'novect')  # vectorization strategy
+    opts=("NOP")  # no opts
 fi
 export PYOP2_EXTRA_INFO=1  # switch on timing mode
 
