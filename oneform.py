@@ -37,6 +37,7 @@ prec = args.prec
 knl_name = args.knl_name
 runtype = args.runtype
 
+# setup the meshes
 if m == "quad":
     mesh = IntervalMesh(n, n)
     mesh = ExtrudedMesh(mesh, n, layer_height=1.0)
@@ -50,21 +51,23 @@ else:
     assert m == "tri"
     mesh = SquareMesh(n, n, L=n)
 
+# setup functions spaces of the Coefficient we action on for the different forms
 if form_str in ["mass", "helmholtz"]:
     V = FunctionSpace(mesh, "CG", p)
 elif form_str in ["laplacian", "elasticity", "hyperelasticity", "holzapfel"]:
     V = VectorFunctionSpace(mesh, "CG", p)
 elif "inner_schur" in form_str:
-    p -= 1
+    p -= 1 # take the right polynomial degree for the mixed spaces, space is built as RT(P+1)-DQ(P)
     V = FunctionSpace(mesh, "DG", p)
 elif "outer_schur" in form_str:
-    p -= 1
+    p -= 1 # take the right polynomial degree for the mixed spaces, space is built as RT(P+1)-DQ(P)
+
     V = FunctionSpace(mesh, "DGT", p)
 else:
     raise AssertionError()
 
+# setup the function we action one
 x = Function(V)
-
 xs = SpatialCoordinate(mesh)
 if "schur" in form_str:
     if len(xs) == 3:
@@ -77,6 +80,7 @@ else:
     else:
         x.interpolate(reduce(operator.add, xs))
 
+# setup the form and the compiler parameters
 if runtype == "slatevectorization":
     tsfc_form = eval(form_str)(p, p, mesh, f)
     y_form = Tensor(action(tsfc_form, x)) + Tensor(action(tsfc_form, x)) - Tensor(action(tsfc_form, x))
@@ -91,6 +95,7 @@ else:
         form_compiler_parameters={}
     y_form = action(form, x)
 
+# assemble and time the form
 y = Function(V)
 for i in range(repeat):
    assemble(y_form, tensor=y, form_compiler_parameters=form_compiler_parameters)
