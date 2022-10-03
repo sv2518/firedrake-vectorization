@@ -76,11 +76,11 @@ palette = sns.color_palette(n_colors=4)
 for form_id, form in enumerate(forms):
     for mesh_id, mesh in enumerate(meshes):
         dfs = []
-        filename = "_".join([platform, form+"_slateexpr", mesh, threads, "1", vec, "gcc"]) + ".csv"
+        filename = "_".join([platform, form, mesh, threads, "1", vec, "gcc"]) + ".csv"
         base_df = pd.read_csv("./csv/" + filename)
         base_df = compute(base_df, platform)
         for compiler in compilers:
-            filename = "_".join([platform, form+"_slateexpr", mesh, threads, simd, vec, compiler]) + ".csv"
+            filename = "_".join([platform, form, mesh, threads, simd, vec, compiler]) + ".csv"
             df = pd.read_csv("./csv/" + filename)
             df = compute(df, platform)
             df["speed up"] = base_df["time"] / df["time"]
@@ -132,7 +132,7 @@ plt.figlegend(plots, ["GCC", "clang", "baseline"], ncol=5,
 
 plt.tight_layout()
 plt.subplots_adjust(bottom=0.15)
-plt.savefig("plots/slate/tsslac-"+platform + "-" + vec + ".pdf", format="pdf")
+plt.savefig("plots/tsfc-"+platform + "-" + vec + ".pdf", format="pdf")
 
 
 # roofline
@@ -173,16 +173,15 @@ setting = {
     "haswell-on-pex": {
         "simds": ["1", "4"],
         "proc": "32" if hyperthreading else "16",
-        "yticks": [2, 5, 10, 20, 50, 100, 200, 300, 500, 1000],
+        "yticks": [1, 5, 10, 20, 50, 100, 200, 300, 500, 2000],
         "ytop": 1000,
-    "ybottom": 1,
+    "ybottom": 3,
     "xleft": 0.1,
     },
 }
 
 x = "ai"
 y = "flop / s"
-xmax = 10000
 
 plots = []
 
@@ -194,7 +193,7 @@ for idx, simd in enumerate(setting[platform]["simds"]):
     ax.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
     rate = cpu[platform]['peak_bw'] / 1e9
-    plot, = ax.plot([0.1, cpu[platform]['peak_flop']/1e9/rate, xmax],
+    plot, = ax.plot([0.1, cpu[platform]['peak_flop']/1e9/rate, 3000],
                     [rate*0.1, cpu[platform]['peak_flop']/1e9, cpu[platform]['peak_flop']/1e9], linewidth=2,
                     color='grey')
     # plot, = ax.plot([cpu[platform]['peak_flop_linpack']/1e9/rate, 3000],
@@ -210,7 +209,7 @@ for idx, simd in enumerate(setting[platform]["simds"]):
         marker = next(markers)
         for mesh_id, mesh in enumerate(meshes):
             color = next(colors)
-            filename = "_".join([platform, form+"_slateexpr", mesh, setting[platform]["proc"], simd, vec, compiler]) + ".csv"
+            filename = "_".join([platform, form, mesh, setting[platform]["proc"], simd, vec, compiler]) + ".csv"
             df = pd.read_csv("./csv/" + filename)
             df = compute(df, platform)
             plot, = ax.plot(df[x], df[y]/1e9, label=form+" - "+mesh, markersize=7, marker=marker, color=color,
@@ -220,8 +219,8 @@ for idx, simd in enumerate(setting[platform]["simds"]):
                 plots.append(plot)
 
     ax.set_ylim(bottom=setting[platform]["ybottom"], top=setting[platform]["ytop"])
-    ax.set_xlim(left=setting[platform]["xleft"], right=xmax)
-    ax.set_title(("Baseline Slate" if simd == "1" else "Cross-element vectorization Slate"))
+    ax.set_xlim(left=setting[platform]["xleft"], right=3000)
+    ax.set_title(("Baseline action" if simd == "1" else "Cross-element vectorization action"))
     ax.set_ylabel("GFLOPS / s")
     ax.set_xlabel("Arithmetic intensity")
 
@@ -229,7 +228,7 @@ plt.subplots_adjust(bottom=0.3)
 lgd = plt.figlegend(plots, names, ncol=5, 
                     loc = "center", bbox_to_anchor=[0.5, 0.1], frameon=False)
 # plt.figlegend(linpack, ["LINPACK"], loc = "center", bbox_to_anchor=[0.7, 0.1], frameon=False)
-plt.savefig("plots/slate/"+"tsslac-roofline-" + platform + ".pdf", format="pdf", bbox_extra_artists=(lgd,), bbox_inches='tight')
+plt.savefig("plots/"+"tsfc-roofline-" + platform + ".pdf", format="pdf", bbox_inches='tight')
 
 
 # populate table in paper
@@ -260,19 +259,16 @@ setting = {
 from collections import defaultdict
 
 result = defaultdict(dict)
-plen = 6
-result_s = np.zeros((len(forms)*plen, len(meshes)))
-result_ai = np.zeros((len(forms)*plen, len(meshes)))
 
-for i, form in enumerate(forms):
-    for j, mesh in enumerate(meshes):
+for form in forms:
+    for mesh in meshes:
         for platform in ["haswell-on-pex"]:
             # baseline
-            filename = "_".join([platform, form+"_slateexpr", mesh, setting[platform]["proc"], "1", vec, compiler]) + ".csv"
+            filename = "_".join([platform, form, mesh, setting[platform]["proc"], "1", vec, compiler]) + ".csv"
             df = pd.read_csv("./csv/" + filename)
             df = compute(df, platform)
             
-            filename = "_".join([platform, form+"_slateexpr", mesh, setting[platform]["proc"], setting[platform]["simd"], vec, compiler]) + ".csv"
+            filename = "_".join([platform, form, mesh, setting[platform]["proc"], setting[platform]["simd"], vec, compiler]) + ".csv"
             df_speed = pd.read_csv("./csv/" + filename)
             df_speed = compute(df_speed, platform)
             df["speed up " + platform] = df["time"] / df_speed["time"]
@@ -283,8 +279,6 @@ for i, form in enumerate(forms):
                 result[(form, mesh, int(row["p"]))]['extend_quad'] = "{0:d}".format(int(row["extend_quad"]))
                 result[(form, mesh, int(row["p"]))]['speed up ' + platform] = "{0:.1f}".format(row["speed up " + platform])
 
-                result_s[plen*i+idx, j] = "{0:.1f}".format(row["speed up " + platform])
-                result_ai[plen*i+idx, j] = "{0:0.1f}".format(row["ai"])
 
 string = ""
 for form in forms:
@@ -292,16 +286,12 @@ for form in forms:
         line = ["", str(p)]
         for mesh in meshes:
             res = result[(form, mesh, p)]
-            line.extend([res['ai'], res['speed up haswell-on-pex']])#, res['speed up skylake']])
+            line.extend([res['ai'], res['extend_dof'], res['extend_quad'], res['speed up haswell-on-pex']])#, res['speed up skylake']])
         string += " & ".join(line)
         string += "\\\\\n"
     string += "\\hline\n"
 print(string)
 
 
-plt.figure(figsize=(6,5))
-ax = sns.heatmap(result_s, robust=True, annot=result_ai, fmt='g', cmap="Reds", xticklabels=meshes,
-                 yticklabels=list([f"{f} {p}" if p==3  else p for f in forms for p in range(plen) ]),
-                 cbar_kws={'label': 'speedup'})
-plt.tight_layout()
-plt.savefig("plots/slate/"+"tsslac-flame-" + platform + ".pdf", format="pdf", bbox_inches='tight')
+
+
