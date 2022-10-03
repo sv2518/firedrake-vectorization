@@ -9,7 +9,7 @@ The experimental framwork is adapted from TJ Sun and his publication
 The experiments are extended to Slate operations on actions and actions on Slate operators, in particular Schur complements.
 
 The performance testing framework as published on the run-on-pex branch is hardware specific.
-The file run_many_oneforms.py must be altered to allow for another architecture.
+The file `run_many_oneforms.py` must be altered to allow for another architecture, in particular the `arch` variable and the setup for a new `arch` value.
 
 All verification is performed on the github actions of https://github.com/OP2/PyOP2/tree/vectorisation-sprint and https://github.com/firedrakeproject/firedrake/pull/2365.
 
