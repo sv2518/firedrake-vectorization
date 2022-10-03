@@ -77,7 +77,7 @@ else:
     else:
         x.interpolate(reduce(operator.add, xs))
 
-if runtype == "slatevectorization"
+if runtype == "slatevectorization":
     tsfc_form = eval(form_str)(p, p, mesh, f)
     y_form = Tensor(action(tsfc_form, x)) + Tensor(action(tsfc_form, x)) - Tensor(action(tsfc_form, x))
     # with the Firedrake repo as specified in README
