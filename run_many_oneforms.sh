@@ -85,6 +85,7 @@ do
                         export SV_OPTS=$op
                         export PYOP2_SIMD_WIDTH=$bs
                         if [ $v == 'novect' ]
+
                         then
 			    batchsize=1
                             export PYOP2_VECT_STRATEGY=""
