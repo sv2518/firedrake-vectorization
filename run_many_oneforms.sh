@@ -86,8 +86,8 @@ do
 			    # for the schur complement runs
 			    # produce vectorised results only
 			    # for highly optimised cased
-			    if [ ($runtype != 'vectorization' and \
-				  $runtype != 'slatevectorization') and \
+			    if [ $runtype != 'vectorization' and \
+				  $runtype != 'slatevectorization' and \
 				  $op != 'PFOP' ]
 			    then
 				break
