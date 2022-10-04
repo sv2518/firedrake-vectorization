@@ -156,23 +156,23 @@ for p in ps:
                        instructions, loops, dof_loop_extent, quadrature_loop_extent))
 
 if runtype == "highordermatfree":
-    name = "homatfslateexpr"
+    name = "homatfslateexpr_"
     suffix += "_optimise{10_matfree{1}_prec{2}".format(bool(optimise), bool(matfree), bool(prec))
 elif runtype == "matfree":
-    name = "matfslateexpr"
+    name = "matfslateexpr_"
     suffix += "_optimise{0}_matfree{1}_prec{2}".format(bool(optimise), bool(matfree), bool(prec))
 elif runtype == "slatevectorization":
-    name = "slateexpr"
+    name = "slateexpr_"
     if simd_width == 1:
         # naming convention changed between runs
         vect_strategy == "cross-element"
 else:
-    name == ""
+    name = ""
     if simd_width == 1:
         # naming convention changed between runs
         vect_strategy == "cross-element"
 
-csvfile = open('csv/{0}{1}_{2}_{3}_{4}_{5}_{6}{7}.csv'.format(prefix, form, name, mesh, str(np), simd_width, vect_strategy, suffix), 'w')
+csvfile = open('csv/{0}{1}_{2}{3}_{4}_{5}_{6}{7}.csv'.format(prefix, form, name, mesh, str(np), simd_width, vect_strategy, suffix), 'w')
 writer = csv.writer(csvfile)
 writer.writerows(result)
 csvfile.close()

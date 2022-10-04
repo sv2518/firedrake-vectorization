@@ -79,30 +79,25 @@ do
             do
                 for comp in ${compiler[@]}
                 do
-                    export TJ_FORM=$f
-                    export TJ_MESH=$m
-                    export PYOP2_SIMD_WIDTH=$bs
-                    export PYOP2_VECT_STRATEGY=$v
-                    #export PYOP2_CC=$comp
-		    export MPICH_CC=$comp
-		    #export OMPI_CC=$comp
-		    if [ $comp == "icc" ]
-                    then
-                        if [ $arch == "haswell" or $arch == "haswell-on-pex" ]
+                    for op in ${opts[@]}
+                    do
+                        export TJ_FORM=$f
+                        export TJ_MESH=$m
+                        export SV_OPTS=$op
+                        export PYOP2_SIMD_WIDTH=$bs
+                        if [ $v == 'novect' ]
                         then
-			    batchsize=1
+			                batchsize=1
                             export PYOP2_VECT_STRATEGY=""
                         else
                             export PYOP2_VECT_STRATEGY=$v
-			    # for the schur complement runs
-			    # produce vectorised results only
-			    # for highly optimised cased
-			    if [ $runtype != 'vectorization' and \
-				  $runtype != 'slatevectorization' and \
-				  $op != 'PFOP' ]
-			    then
-				break
-			    fi
+                            # for the schur complement runs
+                            # produce vectorised results only
+                            # for highly optimised cased
+                            if [[ $runtype != 'vectorization' && $runtype != 'slatevectorization' && $op != 'PFOP' ]]
+                            then
+                                break
+                            fi
                         fi
                         #export PYOP2_CC=$comp
                         export MPICH_CC=$comp

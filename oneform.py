@@ -120,8 +120,13 @@ if rank == 0:
     if "matfree" in runtype:
         tunit = compile_expression(y_form, coffee=False, compiler_parameters=form_compiler_parameters)[0].kinfo.kernel.code
         knl_name, = tuple(filter(lambda name: name.startswith("slate_loopy_knl"), tunit.callables_table.keys()))
+    elif "slate" in runtype:
+        tunit = compile_expression(y_form, coffee=False, compiler_parameters=form_compiler_parameters)[0].kinfo.kernel.code
+        print(tuple(filter(lambda name: True, tunit.callables_table.keys())))
+        knl_name, = tuple(filter(lambda name: name.startswith("slate_wrapper"), tunit.callables_table.keys()))
     else:
-        tunit = compile_form(y_form, coffee=False)[0].kinfo.kernel.code
+        tunit = compile_form(y_form, coffee=False)[0].ast
+        knl_name, = [name for name in tunit.callables_table]
 
     prog = tunit.with_entrypoints(knl_name)
     knl = prog.default_entrypoint
