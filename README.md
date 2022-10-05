@@ -1,4 +1,4 @@
-# Experimental evaluation scripts for Slate vectorisation in Firedrake
+# Experimental evaluation for Slate vectorisation in Firedrake
 
 All experiment data lies in `csv/`, and result plots are in `plots/`.
 Further, data collection and evaluation scripts are included for reproducibility.
