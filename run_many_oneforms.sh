@@ -1,19 +1,13 @@
 #!/bin/bash
+# run the script with
+# run_many_oneforms.sh --matfree
+# or run_many_oneforms.sh --vectorization
+
+# Setup the runs for the achitecture
+# if you don't run on pex, add another case here
 arch='haswell-on-pex'
 hyperthreading=1
-compiler=('gcc' 'clang')
-if [ $arch == "haswell" ]
-then
-    batchsize=(4)  # if vectorised else 
-    if [ $hyperthreading == 1 ]
-    then
-        export TJ_NP=16  # number of processes
-        export TJ_MPI_MAP_BY="hwthread"
-    else
-        export TJ_NP=8
-        export TJ_MPI_MAP_BY="core"
-    fi
-elif [ $arch == "haswell-on-pex" ]
+if [ $arch == "haswell-on-pex" ]
 then
     # note that haswell on pex is a dual-socket machine
     batchsize=(4)  # if vectorised else 
@@ -25,95 +19,83 @@ then
         export TJ_NP=16
         export TJ_MPI_MAP_BY="core"
     fi
-else
-    batchsize=(8)  # if vectorised else 
-    if [ $hyperthreading == 1 ]
-    then
-        export TJ_NP=32
-        export TJ_MPI_MAP_BY="hwthread"
-    else
-        export TJ_NP=16
-        export TJ_MPI_MAP_BY="core"
-    fi
 fi
 
-runtype="highordermatfree"  # or "vectorization" or "matfree"
-if [ $runtype == "highordermatfree" ]
+# Vectorisation and slate vectorisation do not access the local matfree infrastruture 
+# and can therefore be run with less branches required
+if [ $1 == "--vectorization" ]
 then
-    compiler=('gcc')
-    mesh=('hex')
-    form=('inner_schur' 'outer_schur')
-    vs=('cross-element' 'novect')  # vectorization strategy
-    opts=("PFOP")  # only run for highly optimised case
-elif [ $runtype == "matfree" ]
+    runtypes=("vectorization" "slatevectorization")
+elif [ $1 == "--matfree" ]
 then
-    compiler=('gcc')
-    mesh=('hex')
-    form=('inner_schur' 'outer_schur')
-    vs=('cross-element' 'novect')  # vectorization strategy
-    opts=("NOP" "MOP" "FOP" "PFOP")  # no opts, resorting, matfree, preconditoned matfree
-elif [ $runtype == "slatevectorization" ]
-then
-    compiler=('gcc' 'clang')
-    mesh=('quad' 'tri' 'hex' 'tet')
-    form=('mass' 'helmholtz' 'laplacian' 'elasticity' 'hyperelasticity')
-    vs=('cross-element' 'novect')  # vectorization strategy
-    opts=("NOP")  # no opts
-elif [ $runtype == "vectorization" ]
-then
-    compiler=('gcc' 'clang')
-    mesh=('quad' 'tri' 'hex' 'tet')
-    form=('mass' 'helmholtz' 'laplacian' 'elasticity' 'hyperelasticity')
-    vs=('cross-element' 'novect')  # vectorization strategy
-    opts=("NOP")  # no opts
+    runtypes=("matfree" "highordermatfree")
 fi
-export PYOP2_EXTRA_INFO=1  # switch on timing mode
 
-for v in ${vs[@]}
+for runtype in ${runtypes[@]}
 do
-    for m in ${mesh[@]}
+
+    # decide which forms, meshes, compilers and optimisations to run
+    if [ $runtype == "highordermatfree" ]
+    then
+        compiler=('gcc')
+        mesh=('hex')
+        form=('inner_schur' 'outer_schur')
+        vs=('cross-element' 'novect')  # vectorization strategy
+        opts=("PFOP")  # only run for highly optimised case
+    elif [ $runtype == "matfree" ]
+    then
+        compiler=('gcc')
+        mesh=('hex')
+        form=('inner_schur' 'outer_schur')
+        vs=('cross-element' 'novect')  # vectorization strategy
+        opts=("NOP" "MOP" "FOP" "PFOP")  # no opts, resorting, matfree, preconditoned matfree
+    elif [ $runtype == "slatevectorization" or $runtype == "vectorization"]
+    then
+        compiler=('gcc' 'clang')
+        mesh=('quad' 'tri' 'hex' 'tet')
+        form=('mass' 'helmholtz' 'laplacian' 'elasticity' 'hyperelasticity')
+        vs=('cross-element' 'novect')  # vectorization strategy
+        opts=("NOP")  # no opts
+    fi
+
+    for v in ${vs[@]}
     do
-        for f in ${form[@]}
+        for m in ${mesh[@]}
         do
-            for bs in ${batchsize[@]}
+            for f in ${form[@]}
             do
-                for comp in ${compiler[@]}
+                for bs in ${batchsize[@]}
                 do
-                    for op in ${opts[@]}
+                    for comp in ${compiler[@]}
                     do
-                        export TJ_FORM=$f
-                        export TJ_MESH=$m
-                        export SV_OPTS=$op
-                        export PYOP2_SIMD_WIDTH=$bs
-                        if [ $v == 'novect' ]
-                        then
-			                batchsize=1
-                            export PYOP2_VECT_STRATEGY=""
-                        else
-                            export PYOP2_VECT_STRATEGY=$v
+                        for op in ${opts[@]}
+                        do
+                            export TJ_FORM=$f
+                            export TJ_MESH=$m
+                            export SV_OPTS=$op
+                            export PYOP2_SIMD_WIDTH=$bs
+                            export PYOP2_EXTRA_INFO=1  # switch on timing mode
+                            export MPICH_CC=$comp
+
                             # for the schur complement runs
                             # produce vectorised results only
                             # for highly optimised cased
-                            if [[ $runtype != 'vectorization' && $runtype != 'slatevectorization' && $op != 'PFOP' ]]
+                            if [ $v == 'novect' ]
                             then
-                                break
-                            fi
-                        fi
-                        #export PYOP2_CC=$comp
-                        export MPICH_CC=$comp
-                        #export OMPI_CC=$comp
-                        if [ $comp == "icc" ]
-                        then
-                            if [ $arch == "haswell" or $arch == "haswell-on-pex" ]
-                            then
-                                export PYOP2_CFLAGS="-xcore-avx2"
+                                batchsize=1
+                                export PYOP2_VECT_STRATEGY=""
                             else
-                                export PYOP2_CFLAGS="-xcore-avx512 -qopt-zmm-usage=high"
+                                export PYOP2_VECT_STRATEGY=$v
+                                if [[ $runtype != 'vectorization' && $runtype != 'slatevectorization' && $op != 'PFOP' ]]
+                                then
+                                    break
+                                fi
                             fi
-                        fi
-                        firedrake-clean
-                        python run_oneforms.py --prefix "$arch"_ --suffix "_$comp" --runtype "$runtype"
-                        python run_oneforms.py --prefix "$arch"_ --suffix "_$comp" --runtype "$runtype"
+
+                            firedrake-clean
+                            python run_oneforms.py --prefix "$arch"_ --suffix "_$comp" --runtype "$runtype"
+                            python run_oneforms.py --prefix "$arch"_ --suffix "_$comp" --runtype "$runtype"
+                        done
                     done
                 done
             done

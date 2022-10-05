@@ -15,6 +15,7 @@ runtype = args.runtype
 
 
 def get_n(mesh, p, form, runtype):
+    """ The number of mesh elements depends on the polynomial order and the form. """
     if mesh == "hex":
         if form == "inner_schur":
             return 16 if "highorder" in runtype else 32
@@ -50,6 +51,7 @@ def get_n(mesh, p, form, runtype):
         raise AssertionError()
 
 
+# Setup mesh geometry and form name
 try:
     mesh = os.environ["TJ_MESH"]
 except:
@@ -65,6 +67,7 @@ try:
 except:
     np = "1"
 
+# Handle the optimisation modes
 optimise = ""
 matfree = ""
 prec = ""
@@ -81,6 +84,7 @@ try:
 except:
     pass
 
+# Setup polonomial approximation degrees
 if mesh == "hex":
     if runtype == "highordermatfree":
         if form == "inner_schur":
@@ -100,6 +104,7 @@ elif mesh == "tet":
 else:
     raise AssertionError()
 
+# Use the right kernel name to access the FLOP measures etc.
 if runtype == "slatevectorization":
     knl_name = "slate_wrapper"
 else:
@@ -112,7 +117,6 @@ else:
 
 fs = [0]
 repeat = 5
-
 simd_width = os.environ['PYOP2_SIMD_WIDTH']
 vect_strategy = os.environ['PYOP2_VECT_STRATEGY']
 compiler = os.environ['MPICH_CC']
@@ -155,6 +159,10 @@ for p in ps:
         result.append((n, p, f, dofs, cells, adds, subs, muls, divs, mems, bytes, time,
                        instructions, loops, dof_loop_extent, quadrature_loop_extent))
 
+# This dance was required because I changed the
+# naming convention changed between the different experiments
+# FIXME This could be avoided by avoided by rerunning everything
+# and use a consistent naming convention
 if runtype == "highordermatfree":
     name = "homatfslateexpr_"
     suffix += "_optimise{10_matfree{1}_prec{2}".format(bool(optimise), bool(matfree), bool(prec))
@@ -164,14 +172,11 @@ elif runtype == "matfree":
 elif runtype == "slatevectorization":
     name = "slateexpr_"
     if simd_width == 1:
-        # naming convention changed between runs
         vect_strategy == "cross-element"
 else:
     name = ""
     if simd_width == 1:
-        # naming convention changed between runs
         vect_strategy == "cross-element"
-
 csvfile = open('csv/{0}{1}_{2}{3}_{4}_{5}_{6}{7}.csv'.format(prefix, form, name, mesh, str(np), simd_width, vect_strategy, suffix), 'w')
 writer = csv.writer(csvfile)
 writer.writerows(result)

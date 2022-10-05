@@ -8,16 +8,6 @@ import seaborn as sns
 # ### Plot
 # Peak performance
 cpu = {}
-cpu["haswell"] = {
-    "peak_flop": 2.6e9 * 8 * 4 * 2 * 2,  # clock x cores x simd x fma x port
-    "peak_flop_linpack": 262.5e9,  # 1 core = 37.4
-    "peak_bw": 38.48e9,
-}
-cpu["skylake"] = {
-    "peak_flop": 2.1e9 * 16 * 8 * 2 * 2,  # clock x cores x simd x fma x port
-    "peak_flop_linpack": 678.8e9, # 1 core = 62.8
-    "peak_bw": 36.6e9,
-}
 cpu["haswell-on-pex"] = {
     "peak_flop": 2.6e9 * (2*8) * 4 * 2 * 2,  # clock x cores x simd x fma x port
     "peak_bw": 59e9,
@@ -69,7 +59,6 @@ else:
 compilers = ["gcc", "clang"]
 x = "p"
 y = "flop / peak"
-# linpack_scale = cpu[platform]['peak_flop'] / cpu[platform]['peak_flop_linpack']
 
 palette = sns.color_palette(n_colors=4)
 
@@ -103,24 +92,11 @@ for form_id, form in enumerate(forms):
         ax1.set_ylim(bottom=0, top=1.0)
         ax1.set_yticks([0.25, 0.5, 0.75, 1.0])
         ax1.set_title(form + " - " + mesh)
-        # plot = ax1.hlines(cpu[platform]["peak_flop_linpack"]/cpu[platform]["peak_flop"], 1, 6, 
-        #                    color="grey", linestyle=":")
-        
-        # ax2 = ax1.twinx()
-        # ax2.set_ylim(bottom=0, top=linpack_scale)
-        # ax2.set_yticks([0.25, 0.5, 0.75, 1])
-        # if form_id == len(forms) - 1 and mesh_id == len(meshes) - 1:
-        #     plots.append(plot)
         
         if mesh_id == 0:
             ax1.set_ylabel("FLOP/s / Peak FLOP/s")
         else:
             plt.setp(ax1.get_yticklabels(), visible=False)
-        
-        # if mesh_id == len(meshes) - 1:
-        #     ax2.set_ylabel("FLOP/s / LINPACK FLOP/s")
-        # else:
-        #     plt.setp(ax2.get_yticklabels(), visible=False)
             
         if form_id == len(forms) - 1:
             ax1.set_xlabel("Polynomial degree")

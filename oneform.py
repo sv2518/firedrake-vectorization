@@ -99,7 +99,7 @@ else:
 y = Function(V)
 for i in range(repeat):
    assemble(y_form, tensor=y, form_compiler_parameters=form_compiler_parameters)
-   y.dat.data
+   y.dat.data  # make sure there is no lazy evaluation going on in PyOP2
 
 if args.print:
     import pickle
@@ -117,6 +117,7 @@ if rank == 0:
     print("CELLS= {0}".format(cells))
     print("DOFS= {0}".format(dofs))
 
+    # Slate forms are compiled with a different function than TSFC forms (different compilers)
     if "matfree" in runtype:
         tunit = compile_expression(y_form, coffee=False, compiler_parameters=form_compiler_parameters)[0].kinfo.kernel.code
         knl_name, = tuple(filter(lambda name: name.startswith("slate_loopy_knl"), tunit.callables_table.keys()))
@@ -128,6 +129,7 @@ if rank == 0:
         tunit = compile_form(y_form, coffee=False)[0].ast
         knl_name, = [name for name in tunit.callables_table]
 
+    # Get memory and FLOP count
     prog = tunit.with_entrypoints(knl_name)
     knl = prog.default_entrypoint
     warnings = list(knl.silenced_warnings)
@@ -137,6 +139,7 @@ if rank == 0:
     op_map = lp.get_op_map(prog, subgroup_size=1)
     mem_map = lp.get_mem_access_map(prog, subgroup_size=1)
 
+    # Print data and collect them in run_oneforms.py
     for op in ['add', 'sub', 'mul', 'div']:
         print("{0}S= {1}".format(op.upper(), op_map.filter_by(name=[op], dtype=[np.float64]).eval_and_sum({})))
     print("MEMS= {0}".format(mem_map.filter_by(mtype=['global'], dtype=[np.float64]).eval_and_sum({})))
