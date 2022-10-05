@@ -49,7 +49,7 @@ do
         form=('inner_schur' 'outer_schur')
         vs=('cross-element' 'novect')  # vectorization strategy
         opts=("NOP" "MOP" "FOP" "PFOP")  # no opts, resorting, matfree, preconditoned matfree
-    elif [ $runtype == "slatevectorization" or $runtype == "vectorization"]
+    elif [[ $runtype == "slatevectorization" || $runtype == "vectorization" ]]
     then
         compiler=('gcc' 'clang')
         mesh=('quad' 'tri' 'hex' 'tet')
